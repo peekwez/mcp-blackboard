@@ -1,0 +1,7 @@
+[project]
+name = "mcp-markitdown"
+version = "0.1.0"
+description = "A mcp server for converting various media into markdown format using markitdown package"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
