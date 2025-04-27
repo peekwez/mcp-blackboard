@@ -29,3 +29,7 @@ coverage:
 .PHONY: run
 run:
 	uv run src/main.py
+
+.PHONY: build
+build:
+	docker build -t mcp-context-builder .

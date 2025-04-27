@@ -1048,7 +1048,7 @@ cli = [
 ]
 
 [[package]]
-name = "mcp-markitdown"
+name = "mcp-context-builder"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

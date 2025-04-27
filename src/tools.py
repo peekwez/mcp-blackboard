@@ -13,7 +13,6 @@ from tenacity import (
 
 from common import get_app_config, get_converter_opts, get_protocol_opts
 from models import AppConfig
-from server import mcp
 
 
 def _get_cache_key(url: str) -> str:
@@ -42,8 +41,9 @@ def _write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
         None
     """
     hash_key = _get_cache_key(url)
-    fs = fsspec.filesystem("file")
-    cache_path = f"file://{app_config.base_folder}/cache"
+    protocol, base_folder = app_config.base_folder.split("://")
+    fs = fsspec.filesystem(protocol)
+    cache_path = f"{base_folder}/cache"
     pathlib.Path(cache_path).mkdir(parents=True, exist_ok=True)
     cache_file = f"{cache_path}/{hash_key}.md"
     with fs.open(cache_file, "w") as f:
@@ -62,10 +62,11 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
         str: The contents of the cache file.
     """
     hash_key = _get_cache_key(url)
-    fs = fsspec.filesystem("file")
-    cache_path = f"file://{app_config.base_folder}/cache"
+    protocol, base_folder = app_config.base_folder.split("://")
+    fs = fsspec.filesystem(protocol)
+    cache_path = f"{base_folder}/cache"
     cache_file = pathlib.Path(f"{cache_path}/{hash_key}.md")
-    if not fs.exists(cache_file.as_uri()):
+    if not cache_file.exists():
         raise OSError(f"Cache file {cache_file} does not exist")
 
     with fs.open(cache_file, "r") as f:
@@ -75,10 +76,10 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=0.5),
-    retry=retry_if_exception_type(IOError, OSError, ValueError),
+    retry=retry_if_exception_type(OSError),
     reraise=True,
 )
-def _load_and_convert(url: str, use_cache: bool = True) -> str:
+def fetch_context(url: str, use_cache: bool = True) -> str:
     """
     Load a file from a URL location and convert the contents to markdown.
 
@@ -122,43 +123,3 @@ def _load_and_convert(url: str, use_cache: bool = True) -> str:
     if use_cache:
         _write_cache_file(url, document.markdown, app_config)
     return document.markdown
-
-
-@mcp.tool()
-def load_context(url: str, use_cache: bool = True) -> str:
-    """
-    Load the contents of a media location and convert the contents
-    to Markdown.
-
-    The tool supports various media formats such including:
-        - pdf, png, jpg, html, docx, pptx, xlsx, txt, csv
-
-    It also supports the following storage protocols:
-        - file:// -  Local file system
-        - https:// - HTTP/HTTPS URLs
-        - s3:// - Amazon S3 storage
-        - gcs:// - Google Cloud Storage
-        - abfs:// - Azure Blob Storage
-        - smb:// - SMB/CIFS storage
-        - sftp:// - FTP/SFTP storage
-
-    The tool uses the python `markitdown` library to convert the file
-    to Markdown format.
-
-    Args:
-        url (str): The URL of the media to load as context.
-        use_cache (bool): Whether to use the cache for loading the file.
-            Defaults to True.
-
-    Returns:
-        str: The media content in Markdown format.
-
-    Raises:
-        OSError: If there is an I/O error while loading the file.
-        ValueError: If the URL is not valid or the conversion fails.
-    """
-
-    # Disable cache for HTTP/HTTPS URLs since the content may change
-    if url.startswith("http") or url.startswith("https"):
-        use_cache = False
-    return _load_and_convert(url, use_cache)

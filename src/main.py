@@ -1,5 +1,4 @@
 from server import mcp
-from tools import load_context
 
 
 class MarkitdownMCPServer:

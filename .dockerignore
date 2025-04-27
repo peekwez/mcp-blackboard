@@ -1,0 +1,11 @@
+.env
+.gitignore
+.prettierrc
+.vscode
+.venv
+.ruff_cache
+__pycache__
+*.pyc
+*.pyo
+Makefile
+README.md

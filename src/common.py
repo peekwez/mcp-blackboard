@@ -9,6 +9,7 @@ from openai import OpenAI
 
 from models import AppConfig, ConverterParams
 
+TEMPLATES_DIR = Path(__file__).parent / "config"
 app_config: None | AppConfig = None
 
 
@@ -26,7 +27,6 @@ def load_config(env_file: str) -> AppConfig:
 
     load_dotenv(env_file, override=True)
 
-    TEMPLATES_DIR = Path(__file__).parent / "config"
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
     template = env.get_template("template.yml.j2")
 
