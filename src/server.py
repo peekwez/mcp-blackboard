@@ -5,7 +5,7 @@ from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
 
 from common import remove_stale_files
-from tools import fetch_context
+from tools import fetch_context, fetch_memory, update_memory
 
 # Set up the scheduler
 scheduler = BackgroundScheduler()
@@ -39,7 +39,7 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def load_context(url: str, use_cache: bool = True) -> str:
+async def load_context(key: str, use_cache: bool = True) -> str:
     """
     Load the contents of a media location and convert the contents
     to Markdown.
@@ -60,7 +60,8 @@ async def load_context(url: str, use_cache: bool = True) -> str:
     to Markdown format.
 
     Args:
-        url (str): The URL of the media to load as context.
+        key (str): The context key to load. It should be in the format
+            "context|<url>" where <url> is the media location.
         use_cache (bool): Whether to use the cache for loading the file.
             Defaults to True.
 
@@ -71,8 +72,37 @@ async def load_context(url: str, use_cache: bool = True) -> str:
         OSError: If there is an I/O error while loading the file.
         ValueError: If the URL is not valid or the conversion fails.
     """
+    return fetch_context(key, use_cache)
 
-    # Disable caching for HTTP/HTTPS URLs since the content may change
-    if url.startswith("http") or url.startswith("https"):
-        use_cache = False
-    return fetch_context(url, use_cache)
+
+@mcp.tool()
+def read_memory(key: str) -> str:
+    """
+    Fetch a JSON-serializable value from shared Redis.
+
+    Args:
+        key (str): The key to fetch from Redis.
+
+    Returns:
+        str | None: The value associated with the key, or None if not found.
+    """
+    return fetch_memory(key)
+
+
+@mcp.tool()
+def write_memory(key: str, description: str, value: str) -> str:
+    """
+    Write a JSON-serializable value to shared Redis.
+
+    Args:
+        key (str): The key to write to Redis.
+        description (str): A description of the value being written.
+        value (str): The value to write to Redis.
+
+    Returns:
+        str: A confirmation message.
+
+    Raises:
+        ValueError: If the key is not constructed properly.
+    """
+    return update_memory(key, description, value)

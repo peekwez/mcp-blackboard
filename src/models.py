@@ -18,9 +18,28 @@ class ConverterConfig(BaseModel):
     openai_api_base: str | None = None
 
 
+class RedisConfig(BaseModel):
+    host: str
+    port: int = 6379
+    db: int = 0
+    username: str | None = None
+    password: str | None = None
+    ssl: bool = False
+    ssl_ca_path: str | None = None
+    ssl_cert_reqs: str = "required"
+    ssl_ca_certs: str | None = None
+    ssl_certfile: str | None = None
+    ssl_keyfile: str | None = None
+    socket_timeout: int = 10
+    retry_on_timeout: bool = True
+    max_connections: int = 20
+    decode_responses: bool = True
+
+
 class AppConfig(BaseSettings):
     cache_path: str
     mcp_transport: str
+    redis: RedisConfig
     storage: StorageConfig
     converter: ConverterConfig
 

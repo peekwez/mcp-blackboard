@@ -32,7 +32,7 @@ debug:
 
 .PHONY: build
 build:
-	docker build -t mcp-context-builder .
+	docker build -t mcp/blackboard .
 
 .PHONY: run
 run::
@@ -40,8 +40,8 @@ run::
 		--env-file .env \
 		-p 8000:8000 \
 		-v ./samples:/app/samples \
-		--name mcp-context-builder \
-		mcp-context-builder
+		--name mcp-blackboard \
+		mcp/blackboard
 
 
 inspect:

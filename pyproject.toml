@@ -1,7 +1,10 @@
 [project]
-name = "mcp-context-builder"
+name = "mcp-blackboard"
 version = "0.1.0"
-description = "A mcp server for loading the contents from any media into markdown format."
+description = "A mcp server for providing a blackboard interface to the mcp agent"
+authors = [
+    { name = "Kwesi Apponsah", email = "kwesparry@gmail.com" },
+]
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -15,6 +18,7 @@ dependencies = [
     "pydantic>=2.11.3",
     "pydantic-settings>=2.9.1",
     "pyyaml>=6.0.2",
+    "redis>=5.2.1",
     "tenacity>=9.1.2",
 ]
 

@@ -1,6 +1,24 @@
 cache_path: {{ env.CACHE_PATH | default('file:///tmp/data/cache') }}
 mcp_transport: {{ env.MCP_TRANSPORT | default('stdio') }}
 
+redis:
+    host: {{ env.REDIS_HOST | default('localhost') }}
+    port: {{ env.REDIS_PORT | default(6379) }}
+    db: {{ env.REDIS_DB | default(0) }}
+    username: {{ env.REDIS_USERNAME | default('') }}
+    password: {{ env.REDIS_PASSWORD | default('') }}
+    ssl: {{ env.REDIS_SSL | default(false) }}
+    ssl_ca_path: {{ env.REDIS_CA_PATH | default('') }}
+    ssl_cert_reqs: {{ env.REDIS_CERT_REQS | default('required') }}
+    ssl_ca_certs: {{ env.REDIS_SSL_CA_CERTS | default('') }}
+    ssl_keyfile: {{ env.REDIS_SSL_KEYFILE | default('') }}
+    ssl_certfile: {{ env.REDIS_SSL_CERTFILE | default('') }}
+    socket_timeout: {{ env.REDIS_SOCKET_TIMEOUT | default(5) }}
+    retry_on_timeout: {{ env.REDIS_RETRY_ON_TIMEOUT | default(false) }}
+    max_connections: {{ env.REDIS_MAX_CONNECTIONS | default(10) }}
+    connection_pool: {{ env.REDIS_CONNECTION_POOL | default('default') }}
+    decode_responses: {{ env.REDIS_DECODE_RESPONSES | default(true) }}
+
 storage:
     abfs:
         account_name: {{ env.AZURE_STORAGE_ACCOUNT }}

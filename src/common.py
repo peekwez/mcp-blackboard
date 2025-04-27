@@ -1,5 +1,6 @@
 import datetime
 import os
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -8,11 +9,14 @@ import yaml
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
+from redis import Redis
 
 from models import AppConfig, ConverterParams
 
-TEMPLATES_DIR = Path(__file__).parent / "config"
+TEMPLATES_DIR = Path(__file__).parent
+
 app_config: None | AppConfig = None
+redis_client: None | Redis = None
 
 
 def load_config(env_file: str) -> AppConfig:
@@ -30,7 +34,7 @@ def load_config(env_file: str) -> AppConfig:
     load_dotenv(env_file, override=True)
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
-    template = env.get_template("template.yml.j2")
+    template = env.get_template("config.yml.j2")
 
     rendered_yaml: str = template.render(env=os.environ)
 
@@ -173,3 +177,73 @@ def remove_stale_files(max_age: int = 3600) -> None:
         file_age = get_file_age(file_info)
         if file_age > max_age:
             fs.rm(f"{file_info['name']}")
+
+
+def get_redis_client(app_config: AppConfig) -> Redis:
+    """
+    Get the Redis client for shared memory.
+
+    Returns:
+        Redis: The Redis client for shared memory.
+    """
+
+    global redis_client
+    if redis_client is None:
+        redis_client = Redis(**app_config.redis.model_dump())
+    return redis_client
+
+
+def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
+    """
+    Validate the format of a key.
+
+    Args:
+        key (str): The key to validate.
+
+    Returns:
+        tuple[str, str, str | None, str | None]: A tuple containing the key type,
+            plan ID, file path or URL or agent name, and step ID.
+
+    Raises:
+        ValueError: If the key is not in the correct format.
+    """
+
+    parts = key.split("|")
+    if parts[0] not in ("context", "plan", "blackboard", "result"):
+        raise ValueError(
+            "Key must start with 'result', 'context', 'plan', or 'blackboard'"
+        )
+
+    if parts[0] in ("plan", "blackboard") and len(parts) != 2:
+        raise ValueError(
+            "Plan or blackboard must be in the format 'plan|<plan_id>' " 
+            "or 'blackboard|<plan_id>'"
+        )
+
+    if parts[0] == "context" and len(parts) != 3:
+        raise ValueError(
+            "Context key must be in the format 'context|<plan_id>|<file_path_or_url>'"
+        )
+
+    if parts[0] == "result" and len(parts) != 4:
+        raise ValueError(
+            "Result key must be in the format 'result|<plan_id>|<aget_name>|<step id>'"
+        )
+
+    try:
+        uuid.UUID(parts[1])
+    except ValueError:
+        message = (
+            "Plan ID must be a valid UUID. Key must be in the format "
+            "'context|<plan_id>|<file_path_or_url>'"
+            " or 'plan|<plan_id>' or 'blackboard|<plan_id>'"
+            " or 'result|<plan_id>|<agent_name>|<step id>'"
+        )
+        raise ValueError(message) from None
+
+    return (
+        parts[0],
+        parts[1],
+        parts[2] if len(parts) > 2 else None,
+        parts[3] if len(parts) > 3 else None,
+    )
