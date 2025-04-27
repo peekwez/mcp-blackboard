@@ -1,7 +1,89 @@
 [project]
-name = "mcp-markitdown"
+name = "mcp-context-builder"
 version = "0.1.0"
-description = "A mcp server for converting various media into markdown format using markitdown package"
+description = "A mcp server for loading the contents from any media into markdown format."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "dotenv>=0.9.9",
+    "fsspec[abfs,fuse,gcs,s3,sftp,smb]>=2025.3.2",
+    "jinja2>=3.1.6",
+    "markitdown[all]>=0.1.1",
+    "mcp[cli]>=1.6.0",
+    "openai>=1.76.0",
+    "pydantic>=2.11.3",
+    "pydantic-settings>=2.9.1",
+    "pyyaml>=6.0.2",
+    "tenacity>=9.1.2",
+]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.8.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "rich>=14.0.0",
+    "ruff>=0.11.7",
+]
+
+
+[tool.ruff]
+lint.select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade,
+]
+lint.isort = { combine-as-imports = true, known-first-party = ["agents"] }
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"examples/**/*.py" = ["E501"]
+
+[tool.mypy]
+strict = true
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+
+# [[tool.mypy.overrides]]
+# module = "sounddevice.*"
+# ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["tests", "src"]
+
+[tool.coverage.report]
+show_missing = true
+sort = "-Cover"
+exclude_also = [
+    # This is only executed while typechecking
+    "if TYPE_CHECKING:",
+    "@abc.abstractmethod",
+    "raise NotImplementedError",
+    "logger.debug",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--pdb",
+    "--tb=short",
+    "--disable-warnings",
+    "--maxfail=1",
+]
+env_file = ".env"
+testpaths = [
+    "tests",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = [
+    # This is a warning that is expected to happen: we have an async filter that raises an exception
+    "ignore:DeprecatedWarning:RuntimeWarning:UserWarning",
+]

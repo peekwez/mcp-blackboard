@@ -1,0 +1,26 @@
+base_folder: "{{ env.BASE_FOLDER | default('/mnt/data') }}"
+
+storage:
+    abfs:
+        account_name: "{{ env.AZURE_STORAGE_ACCOUNT }}"
+        sas_token: "{{ env.AZURE_STORAGE_SAS_TOKEN }}"
+    s3:
+        key: "{{ env.AWS_ACCESS_KEY_ID }}"
+        secret: "{{ env.AWS_SECRET_ACCESS_KEY }}"
+    gcs:
+        token: "{{ env.GOOGLE_APPLICATION_CREDENTIALS }}"
+    sftp:
+        host: "{{ env.SFTP_HOST }}"
+        port: "{{ env.SFTP_PORT | default(22) }}"
+        username: "{{ env.SFTP_USER }}"
+        password: "{{ env.SFTP_PASS }}"
+    smb:
+        server_name: "{{ env.SMB_SERVER }}"
+        share_name: "{{ env.SMB_SHARE }}"
+        username: "{{ env.SMB_USER }}"
+        password: "{{ env.SMB_PASS }}"
+
+converter:
+    azure_document_endpoint: "{{ env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT }}"
+    openai_api_key: "{{ env.OPENAI_API_KEY }}"
+    openai_api_base: "{{ env.OPENAI_API_BASE | default('https://api.openai.com/v1') }}"
