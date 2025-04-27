@@ -1,8 +1,6 @@
 import hashlib
 import io
-import pathlib
 
-import fsspec
 import markitdown
 from tenacity import (
     retry,
@@ -11,7 +9,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from common import get_app_config, get_converter_opts, get_protocol_opts
+from common import get_app_config, get_converter_opts, get_filesystem
 from models import AppConfig
 
 
@@ -41,10 +39,9 @@ def _write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
         None
     """
     hash_key = _get_cache_key(url)
-    protocol, base_folder = app_config.base_folder.split("://")
-    fs = fsspec.filesystem(protocol)
-    cache_path = f"{base_folder}/cache"
-    pathlib.Path(cache_path).mkdir(parents=True, exist_ok=True)
+    _, cache_path = app_config.cache_path.split("://")
+    fs = get_filesystem(app_config.cache_path, app_config)
+    fs.mkdir(cache_path, create_parents=True, exist_ok=True)
     cache_file = f"{cache_path}/{hash_key}.md"
     with fs.open(cache_file, "w") as f:
         f.write(contents)
@@ -62,11 +59,10 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
         str: The contents of the cache file.
     """
     hash_key = _get_cache_key(url)
-    protocol, base_folder = app_config.base_folder.split("://")
-    fs = fsspec.filesystem(protocol)
-    cache_path = f"{base_folder}/cache"
-    cache_file = pathlib.Path(f"{cache_path}/{hash_key}.md")
-    if not cache_file.exists():
+    _, cache_path = app_config.cache_path.split("://")
+    fs = get_filesystem(app_config.cache_path, app_config)
+    cache_file = f"{cache_path}/{hash_key}.md"
+    if not fs.exists(cache_file):
         raise OSError(f"Cache file {cache_file} does not exist")
 
     with fs.open(cache_file, "r") as f:
@@ -99,8 +95,7 @@ def fetch_context(url: str, use_cache: bool = True) -> str:
         raise ValueError("URL cannot be empty")
 
     app_config = get_app_config()
-    protocol_opts = get_protocol_opts(url, app_config)
-    converter_opts = get_converter_opts(url, app_config)
+    converter_options = get_converter_opts(url, app_config)
 
     # if a cache file exists, load it
     if use_cache:
@@ -110,13 +105,13 @@ def fetch_context(url: str, use_cache: bool = True) -> str:
             pass
 
     try:
-        fs = fsspec.filesystem(url.split("://")[0], **protocol_opts)
+        fs = get_filesystem(url, app_config)
         with fs.open(url, "rb") as f:
             buffer = io.BytesIO(f.read())
     except Exception as e:
         raise OSError(f"Failed to load file from {url}: {e}") from None
 
-    client = markitdown.MarkItDown(**converter_opts)
+    client = markitdown.MarkItDown(**converter_options)
     document = client.convert(buffer)
 
     # save a copy of the file to the cache for future use

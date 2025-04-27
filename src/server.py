@@ -1,10 +1,35 @@
+import datetime
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger 
+from contextlib import asynccontextmanager
 from mcp.server.fastmcp import FastMCP
 
 from tools import fetch_context
+from common import remove_stale_files
+
+def clean_cache():
+    remove_stale_files(max_age=3600)  # Remove files older than 1 hour
+    print(f"Task is running at {datetime.now()}")
+    # ... additional task code goes here ...
+
+# Set up the scheduler
+scheduler = BackgroundScheduler()
+trigger = CronTrigger(minute=0)  # every hour at the start of the hour
+scheduler.add_job(clean_cache, trigger)
+scheduler.start()
+
+
+@asynccontextmanager
+async def lifespan(mcp: FastMCP):
+    yield
+    scheduler.shutdown()
 
 mcp = FastMCP(
     "Markitdown MCP Server",
+    lifespan=lifespan,
     dependencies=[
+        "apscheduler",
         "dotenv",
         "fsspec",
         "jinja2",
@@ -17,7 +42,6 @@ mcp = FastMCP(
     ],
 )
 
-
 @mcp.tool()
 async def load_context(url: str, use_cache: bool = True) -> str:
     """
@@ -25,7 +49,7 @@ async def load_context(url: str, use_cache: bool = True) -> str:
     to Markdown.
 
     The tool supports various media formats such including:
-        - pdf, png, jpg, html, docx, pptx, xlsx, txt, csv
+        - pdf, png, jpg, html, docx, pptx, xlsx, txt, csv.
 
     It also supports the following storage protocols:
         - file:// -  Local file system
@@ -34,7 +58,7 @@ async def load_context(url: str, use_cache: bool = True) -> str:
         - gcs:// - Google Cloud Storage
         - abfs:// - Azure Blob Storage
         - smb:// - SMB/CIFS storage
-        - sftp:// - FTP/SFTP storage
+        - sftp:// - FTP/SFTP storage.
 
     The tool uses the python `markitdown` library to convert the file
     to Markdown format.

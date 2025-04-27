@@ -19,7 +19,7 @@ class ConverterConfig(BaseModel):
 
 
 class AppConfig(BaseSettings):
-    base_folder: str
+    cache_path: str
     storage: StorageConfig
     converter: ConverterConfig
 

@@ -1,6 +1,5 @@
 from server import mcp
 
-
 class MarkitdownMCPServer:
     def run(self):
         mcp.run(transport="sse")

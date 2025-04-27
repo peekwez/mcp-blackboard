@@ -1,12 +1,15 @@
+import datetime
 import os
 from pathlib import Path
 from typing import Any
 
+import fsspec
 import yaml
+
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
-
 from models import AppConfig, ConverterParams
 
 TEMPLATES_DIR = Path(__file__).parent / "config"
@@ -80,9 +83,9 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
     return params.model_dump()
 
 
-def get_protocol_opts(url: str, app_config: AppConfig) -> dict:
+def get_storage_opts(url: str, app_config: AppConfig) -> dict:
     """
-    Set options for the protocol based on the URL.
+    Get the storage options based on the URL protocol.
 
     Args:
         url (str): The URL to determine the options for.
@@ -94,7 +97,7 @@ def get_protocol_opts(url: str, app_config: AppConfig) -> dict:
     protocol = url.split("://")[0]
     if protocol == "s3":
         return app_config.storage.s3
-    elif protocol in "abfs":
+    elif protocol == "abfs":
         return app_config.storage.abfs
     elif protocol == "gcs":
         return app_config.storage.gcs
@@ -111,3 +114,60 @@ def get_protocol_opts(url: str, app_config: AppConfig) -> dict:
             f"file, s3, abfs, gcs, sftp, smb, http"
         )
         raise ValueError(message)
+
+
+def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem:
+    """
+    Get the filesystem object based on the URL protocol.
+
+    Args:
+        url (str): The URL to determine the filesystem for.
+        app_config (AppConfig): The application configuration.
+
+    Returns:
+        fsspec.AbstractFileSystem: The filesystem object.
+    """
+    protocol, _ = url.split("://")
+    storage_options = get_storage_opts(url, app_config)
+    fs = fsspec.filesystem(protocol, **storage_options)
+    return fs
+
+
+def get_file_age(file_info: dict[str,str|int|float]) -> int:
+    """
+    Get the age of a file.
+
+    Args:
+        file_info (dict): The file information dictionary.
+
+    Returns:
+        datetime.timedelta: The age of the file.
+    """
+    created_at = datetime.datetime.fromtimestamp(file_info["ctime"])
+    current_time = datetime.datetime.now()
+    delta = current_time - created_at
+    return int(delta.total_seconds())
+
+
+def remove_stale_files(max_age: int = 3600) -> None:
+    """
+    Remove all files in the cache directory that are older than 1 hour.
+
+    Args:
+        max_age (int): The maximum age of files to keep in seconds.
+            Default is 3600 seconds (1 hour).
+
+    Returns:
+        None
+    """
+
+    app_config = get_app_config()
+    _, cache_path = app_config.cache_path.split("://")
+    fs = get_filesystem(app_config.cache_path, app_config)
+
+    # remove all files older than 1 day
+    for file_info in fs.listdir(cache_path):
+        file_age = get_file_age(file_info)
+        if file_age > max_age:
+            fs.rm(f"{file_info['name']}")
+
