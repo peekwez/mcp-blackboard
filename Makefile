@@ -26,10 +26,29 @@ coverage:
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m --fail-under=95
 
-.PHONY: run
-run:
+.PHONY: debug
+debug:
 	uv run src/main.py
 
 .PHONY: build
 build:
 	docker build -t mcp-context-builder .
+
+.PHONY: run
+run::
+	docker run -it --rm \
+		--env-file .env \
+		-p 8000:8000 \
+		-v ./samples:/app/samples \
+		--name mcp-context-builder \
+		mcp-context-builder
+
+
+inspect:
+	npx @modelcontextprotocol/inspector \
+		node build/index.js
+
+.PHONY: clean
+clean:
+	docker system prune -f
+	docker container prune -f

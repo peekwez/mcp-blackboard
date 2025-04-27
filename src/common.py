@@ -5,11 +5,10 @@ from typing import Any
 
 import fsspec
 import yaml
-
-from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
+
 from models import AppConfig, ConverterParams
 
 TEMPLATES_DIR = Path(__file__).parent / "config"
@@ -133,7 +132,7 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
     return fs
 
 
-def get_file_age(file_info: dict[str,str|int|float]) -> int:
+def get_file_age(file_info: dict[str, str | int | float]) -> int:
     """
     Get the age of a file.
 
@@ -143,8 +142,12 @@ def get_file_age(file_info: dict[str,str|int|float]) -> int:
     Returns:
         datetime.timedelta: The age of the file.
     """
-    created_at = datetime.datetime.fromtimestamp(file_info["ctime"])
-    current_time = datetime.datetime.now()
+    if ctime := file_info.get("ctime"):
+        created_at = datetime.datetime.fromtimestamp(ctime)
+    else:
+        created_at = file_info.get("creation_time")
+
+    current_time = datetime.datetime.now(datetime.UTC)
     delta = current_time - created_at
     return int(delta.total_seconds())
 
@@ -170,4 +173,3 @@ def remove_stale_files(max_age: int = 3600) -> None:
         file_age = get_file_age(file_info)
         if file_age > max_age:
             fs.rm(f"{file_info['name']}")
-

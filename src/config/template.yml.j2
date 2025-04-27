@@ -1,4 +1,5 @@
 cache_path: {{ env.CACHE_PATH | default('file:///tmp/data/cache') }}
+mcp_transport: {{ env.MCP_TRANSPORT | default('stdio') }}
 
 storage:
     abfs:

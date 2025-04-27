@@ -20,6 +20,7 @@ class ConverterConfig(BaseModel):
 
 class AppConfig(BaseSettings):
     cache_path: str
+    mcp_transport: str
     storage: StorageConfig
     converter: ConverterConfig
 
