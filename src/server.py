@@ -49,7 +49,7 @@ mcp = FastMCP(
     name="MCP Blackboard Server",
     instructions=(
         "A blackboard server for storing and retrieving "
-        "static and dynamic data for an agent task",
+        "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
 

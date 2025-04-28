@@ -23,6 +23,9 @@ storage:
     abfs:
         account_name: {{ env.AZURE_STORAGE_ACCOUNT }}
         account_key: {{ env.AZURE_STORAGE_KEY }}
+        tenant_id: {{ env.AZURE_TENANT_ID }}
+        client_id: {{ env.AZURE_CLIENT_ID }}
+        client_secret: {{ env.AZURE_CLIENT_SECRET }}
         anon: {{ env.AZURE_STORAGE_ANON | default(false) }}
     s3:
         key: {{ env.AWS_ACCESS_KEY_ID }}

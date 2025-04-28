@@ -4,12 +4,14 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from azure.identity import DefaultAzureCredential
 import fsspec
 import yaml
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
 from redis import Redis
+
 
 from models import AppConfig, ConverterParams
 
@@ -132,6 +134,7 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
     """
     protocol, _ = url.split("://")
     storage_options = get_storage_opts(url, app_config)
+    print(storage_options)
     fs = fsspec.filesystem(protocol, **storage_options)
     return fs
 
@@ -166,6 +169,10 @@ def get_redis_client(app_config: AppConfig) -> Redis:
 
     global redis_client
     if redis_client is None:
+        if "windows.net" in app_config.redis.host:
+            cred = DefaultAzureCredential()
+            token = cred.get_token("https://redis.azure.com/.default")
+            app_config.redis.password = token.token
         redis_client = Redis(**app_config.redis.model_dump())
     return redis_client
 
