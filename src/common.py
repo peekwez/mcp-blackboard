@@ -156,29 +156,6 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
     return int(delta.total_seconds())
 
 
-def remove_stale_files(max_age: int = 3600) -> None:
-    """
-    Remove all files in the cache directory that are older than 1 hour.
-
-    Args:
-        max_age (int): The maximum age of files to keep in seconds.
-            Default is 3600 seconds (1 hour).
-
-    Returns:
-        None
-    """
-
-    app_config = get_app_config()
-    _, cache_path = app_config.cache_path.split("://")
-    fs = get_filesystem(app_config.cache_path, app_config)
-
-    # remove all files older than 1 day
-    for file_info in fs.listdir(cache_path):
-        file_age = get_file_age(file_info)
-        if file_age > max_age:
-            fs.rm(f"{file_info['name']}")
-
-
 def get_redis_client(app_config: AppConfig) -> Redis:
     """
     Get the Redis client for shared memory.
@@ -216,7 +193,7 @@ def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
 
     if parts[0] in ("plan", "blackboard") and len(parts) != 2:
         raise ValueError(
-            "Plan or blackboard must be in the format 'plan|<plan_id>' " 
+            "Plan or blackboard must be in the format 'plan|<plan_id>' "
             "or 'blackboard|<plan_id>'"
         )
 

@@ -98,16 +98,16 @@ def fetch_context(key: str, use_cache: bool = True) -> str:
         OSError: If there is an I/O error while loading the file.
         ValueError: If the URL is not valid or the conversion fails.
     """
-    
+
     if not key.startswith("context|"):
         raise ValueError("Key must start with 'context|'")
-    
+
     _, _, url, _ = validate_key(key)
 
     # For URLs starting with http(s), we don't use the cache
     # because may be updated frequently.
     # Since cache is cleared every 1 hour this is not a problem
-    #if url.startswith(("http://", "https://")):
+    # if url.startswith(("http://", "https://")):
     #    use_cache = False
 
     app_config = get_app_config()
@@ -136,7 +136,7 @@ def fetch_context(key: str, use_cache: bool = True) -> str:
     return document.markdown
 
 
-def fetch_memory(key: str) -> str | None:
+def fetch_memory(key: str) -> str | dict | None:
     """
     Fetch a JSON-serializable value from shared Redis.
 
@@ -144,26 +144,26 @@ def fetch_memory(key: str) -> str | None:
         key (str): The key to fetch from Redis.
 
     Returns:
-        str | None: The value associated with the key, or None if not found.
+        str | dict | None: The value associated with the key, or None if not found.
 
     """
     _key = key.lower()
     validate_key(_key)
     client = get_redis_client(get_app_config())
-    if "blackboard" in _key:
+    if _key.startswith("blackboard|"):
         return json.dumps(client.hgetall(_key))
 
     return client.get(_key)
 
 
-def update_memory(key: str, description: str, value: str) -> str:
+def update_memory(key: str, description: str, value: str | dict | list) -> str:
     """
     Write a JSON-serializable value to shared Redis.
 
     Args:
         key (str): The key to write to Redis.
         description (str): A description of the value being written.
-        value (str): The value to write to Redis.
+        value (str|dict|list): The value to write to Redis.
 
     Returns:
         str: A confirmation message.
@@ -173,8 +173,22 @@ def update_memory(key: str, description: str, value: str) -> str:
     _, plan_id, _, _ = validate_key(_key)
     client = get_redis_client(get_app_config())
 
-    _base_key = f"blackboard|{plan_id}"
-    client.hset(_base_key, _key, description)
-    client.expire(_base_key, 3600)
-    client.set(_key, value, ex=3600)
+    # If context or result, store description in blackboard
+    if _key.startswith(("context|", "result|")):
+        _b_key = f"blackboard|{plan_id}"
+        client.hset(_b_key, _key, description)
+        client.expire(_b_key, 3600)
+
+    # If plan or result store value in Redis
+    if _key.startswith(("result|", "plan|")):
+        if isinstance(value, dict):
+            value = json.dumps(value)
+        elif not isinstance(value, list):
+            value = json.dumps(value)
+
+        if not isinstance(value, str):
+            raise ValueError("Value must be a JSON-serializable object or a string")
+        
+        client.set(_key, value, ex=3600)
+
     return "ok"

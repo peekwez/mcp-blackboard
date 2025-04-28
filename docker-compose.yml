@@ -1,0 +1,25 @@
+services:
+  mcp-blackboard:
+    image: mcp/blackboard
+    container_name: mcp-blackboard
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./samples:/app/data/samples
+    depends_on:
+      - redis-blackboard
+    networks:
+      - mcp-network
+
+  redis-blackboard:
+    image: redis:latest
+    container_name: redis-blackboard
+    ports:
+      - "6380:6379"
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

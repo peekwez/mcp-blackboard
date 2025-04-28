@@ -1,0 +1,7 @@
+params:
+  - blackboard|361f01a06dbe43f7acad6461c29a258f
+  - plan|361f01a06dbe43f7acad6461c29a258f
+  - result|361f01a06dbe43f7acad6461c29a258f|researcher|1
+  - context|361f01a06dbe43f7acad6461c29a258f|file:///app/samples/credit_report.pdf
+  - context|361f01a06dbe43f7acad6461c29a258f|abfs://mcp-tests/mortgage/credit_report.pdf
+  - context|361f01a06dbe43f7acad6461c29a258f|abfs://mcp-tests/mortgage/loe_sample.png
