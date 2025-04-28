@@ -30,7 +30,7 @@ build:
 	docker build -t mcp/blackboard .
 
 run:
-	docker run -it --rm \
+	docker run -it --rm -d \
 		--env-file .env \
 		-p 8000:8000 \
 		-v ./samples:/app/samples \
