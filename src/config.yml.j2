@@ -47,3 +47,4 @@ converter:
     azure_document_endpoint: {{ env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT }}
     openai_api_key: {{ env.OPENAI_API_KEY }}
     openai_api_base: {{ env.OPENAI_API_BASE | default('https://api.openai.com/v1') }}
+    openai_default_model: {{ env.OPENAI_DEFAULT_MODEL | default('gpt-4o') }}

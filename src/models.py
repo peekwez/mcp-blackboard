@@ -16,6 +16,7 @@ class ConverterConfig(BaseModel):
     azure_document_endpoint: str | None = None
     openai_api_key: str | None = None
     openai_api_base: str | None = None
+    openai_default_model: str = "gpt-4o"
 
 
 class RedisConfig(BaseModel):

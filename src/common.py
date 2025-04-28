@@ -78,7 +78,7 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
                 api_key=app_config.converter.openai_api_key,
                 base_url=app_config.converter.openai_api_base,
             ),
-            llm_model="gpt-4o",
+            llm_model=app_config.converter.openai_default_model,
         )
     elif url.lower().endswith((".pdf", ".x-pdf")):
         params = ConverterParams(
