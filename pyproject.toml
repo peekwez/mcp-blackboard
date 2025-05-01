@@ -43,7 +43,6 @@ lint.select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade,
 ]
-lint.isort = { combine-as-imports = true, known-first-party = ["agents"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

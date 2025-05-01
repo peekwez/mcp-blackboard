@@ -188,7 +188,7 @@ def update_memory(key: str, description: str, value: str | dict | list) -> str:
 
         if not isinstance(value, str):
             raise ValueError("Value must be a JSON-serializable object or a string")
-        
+
         client.set(_key, value, ex=3600)
 
     return "ok"

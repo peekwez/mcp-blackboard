@@ -4,14 +4,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from azure.identity import DefaultAzureCredential
 import fsspec
 import yaml
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
 from redis import Redis
-
 
 from models import AppConfig, ConverterParams
 

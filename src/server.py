@@ -2,8 +2,7 @@ from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.server import Settings
+from mcp.server.fastmcp import Context, FastMCP
 
 from common import get_app_config, get_file_age, get_filesystem
 from tools import fetch_context, fetch_memory, update_memory
@@ -52,7 +51,6 @@ mcp = FastMCP(
         "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
-
     dependencies=[
         "apscheduler",
         "dotenv",
@@ -66,7 +64,6 @@ mcp = FastMCP(
         "tenacity",
     ],
 )
-
 
 
 @mcp.tool()
@@ -108,7 +105,7 @@ async def read_context(key: str, use_cache: bool = True) -> str:
 
 
 @mcp.tool()
-async def read_memory(key: str) -> str | dict | list | None:
+async def read_memory(key: str, ctx: Context) -> str | dict | list | None:
     """
     Fetch a JSON-serializable value from shared Redis.
 
