@@ -32,7 +32,6 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
     """
     protocol, _ = url.split("://")
     storage_options = get_storage_opts(url, app_config)
-    print(storage_options)
     fs = fsspec.filesystem(protocol, **storage_options)
     return fs
 

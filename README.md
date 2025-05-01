@@ -2,8 +2,10 @@
 
 > **Version 0.1.0** – A lightweight blackboard memory server for the **Model Context Protocol (MCP)**
 
-`mcp-blackboard` exposes a simple HTTP/SSE interface that lets multiple AI agents **store, retrieve and score context**—documents, embeddings, structured objects, and more—on a shared “blackboard”.  
-It is designed to be dropped into any MCP‑compatible workflow so your planner, researcher, and evaluator agents can collaborate without reinventing persistence.
+`mcp-blackboard` exposes a simple HTTP/SSE interface that lets multiple AI agents **store, and retrieve context and results**—documents, embeddings, structured objects, and more—on a shared “blackboard”.
+
+It is designed to be dropped into any MCP‑compatible workflow so your planner,
+researcher, extractor, analyzer, writer, editor, and evaluator agents can collaborate without reinventing persistence.
 
 <div align="center">
 <img src="https://img.shields.io/badge/Python-3.12%2B-blue" />
@@ -13,15 +15,50 @@ It is designed to be dropped into any MCP‑compatible workflow so your planner,
 
 ---
 
+## Available Tools
+
+### MCP Tools
+
+The following tools are available in `mcp-blackboard`:
+
+- **`save_plan(plan_id: str, plan: dict | str) -> str`**  
+   Save a plan to the shared state.
+
+- **`mark_plan_as_completed(plan_id: str, step_id: str) -> str`**  
+   Mark a plan step as completed in the shared state.
+
+- **`save_result(plan_id: str, agent_name: str, step_id: str, description: str, result: str | dict) -> str`**  
+   Save a result to the shared state.
+
+- **`save_context_description(plan_id: str, file_path_or_url: str, description: str) -> str`**  
+   Write a context description to the shared state.
+
+- **`get_blackboard(plan_id: str) -> str | dict | None`**  
+   Fetch a blackboard entry for a plan.
+
+- **`get_plan(plan_id: str) -> str | dict | None`**  
+   Fetch a plan from the shared state.
+
+- **`get_result(plan_id: str, agent_name: str, step_id: str) -> str | dict | None`**  
+   Fetch a result from the shared state.
+
+- **`get_context(file_path_or_url: str, use_cache: bool = True) -> str`**  
+   Read and convert media content to Markdown format.
+
+### File Cache Management Scheduler
+
+- **`remove_stale_files(max_age: int = 3600) -> None`**  
+  Remove files older than the specified age from the cache directory.
+
 ## ✨ Highlights
 
-| Capability | Why it matters |
-|------------|----------------|
-| **Unified memory** | One source of truth for agent context—no need for ad‑hoc scratch files or transient Redis keys. |
-| **Filesystem abstraction** | Built on `fsspec` with optional drivers for S3, Azure Blob, GCS, ABFS, SFTP, SMB, and more. |
-| **Real‑time updates** | Server‑Sent Events (SSE) stream context changes to connected agents instantly. |
-| **House‑keeping scheduler** | Pluggable cron jobs automatically prune expired keys and refresh embeddings. |
-| **Container‑ready** | Deterministic builds via `uv` lockfile; the slim Docker image is <90 MB. |
+| Capability                  | Why it matters                                                                                  |
+| --------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Unified memory**          | One source of truth for agent context—no need for ad‑hoc scratch files or transient Redis keys. |
+| **Filesystem abstraction**  | Built on `fsspec` with optional drivers for S3, Azure Blob, GCS, ABFS, SFTP, SMB, and more.     |
+| **Real‑time updates**       | Server‑Sent Events (SSE) stream context changes to connected agents instantly.                  |
+| **House‑keeping scheduler** | Pluggable cron jobs automatically prune expired keys and refresh embeddings.                    |
+| **Container‑ready**         | Deterministic builds via `uv` lockfile; the slim Docker image is <90 MB.                        |
 
 ---
 
@@ -54,8 +91,8 @@ docker compose up -d
 
 Compose starts:
 
-* **mcp-blackboard** – FastAPI+SSE service  
-* **redis** – in‑memory store for keys, scores, embeddings
+- **mcp-blackboard** – FastAPI+SSE service
+- **redis** – in‑memory store for keys, scores, embeddings
 
 ---
 
@@ -63,13 +100,14 @@ Compose starts:
 
 All settings are environment‑driven:
 
-Variable | Purpose
----------|---------
-`OPENAI_API_KEY` | Embeddings / LLM calls (optional)
-`MCP_TRANSPORT` | Event transport (`sse` or `poll`)
-`REDIS_HOST`, `REDIS_PORT`, `REDIS_DB` | Redis connection
-`AZURE_STORAGE_ACCOUNT` / `AWS_ACCESS_KEY_ID` / … | Credentials for remote filesystems  
-*(see `samples/env-sample.txt` for the full list)*
+| Variable                                          | Purpose                            |
+| ------------------------------------------------- | ---------------------------------- |
+| `OPENAI_API_KEY`                                  | Embeddings / LLM calls (optional)  |
+| `MCP_TRANSPORT`                                   | Event transport (`sse` or `poll`)  |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB`            | Redis connection                   |
+| `AZURE_STORAGE_ACCOUNT` / `AWS_ACCESS_KEY_ID` / … | Credentials for remote filesystems |
+
+_(see `samples/env-sample.txt` for the full list)_
 
 ---
 
@@ -100,9 +138,9 @@ pytest -q
 
 ## 🤝 Contributing
 
-1. Fork and create a feature branch  
-2. Use conventional commits (`feat:`, `fix:`…)  
-3. Run `make lint test` locally  
+1. Fork and create a feature branch
+2. Use conventional commits (`feat:`, `fix:`…)
+3. Run `make lint test` locally
 4. Open a PR—squash merge once approved
 
 ---
