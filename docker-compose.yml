@@ -13,7 +13,7 @@ services:
       - mcp-network
 
   redis-blackboard:
-    image: redis:latest
+    image: redis/redis-stack:latest
     container_name: redis-blackboard
     ports:
       - "6380:6379"
