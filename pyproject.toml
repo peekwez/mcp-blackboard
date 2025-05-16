@@ -26,6 +26,7 @@ dependencies = [
 dev = [
     "coverage>=7.8.0",
     "mypy>=1.15.0",
+    "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "rich>=14.0.0",
@@ -82,12 +83,11 @@ addopts = [
     "--disable-warnings",
     "--maxfail=1",
 ]
-env_file = ".env"
+
 testpaths = [
     "tests",
 ]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "session"
+
 filterwarnings = [
     # This is a warning that is expected to happen: we have an async filter that raises an exception
     "ignore:DeprecatedWarning:RuntimeWarning:UserWarning",
