@@ -131,15 +131,16 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
         app_config (AppConfig): The application configuration.
 
     Returns:
-        fsspec.AbstractFileSystem: The filesystem object for the protocol.
+        fsspec.AbstractFileSystem: The filesystem object.
     """
-    protocol: str = url.split("://")[0]
-    storage_options = get_storage_opts(url, app_config) or {}
-    fs: fsspec.AbstractFileSystem = fsspec.filesystem(protocol, **storage_options)  # type: ignore
+    protocol, _ = url.split("://")
+    storage_options = get_storage_opts(url, app_config)
+    print(storage_options)
+    fs = fsspec.filesystem(protocol, **storage_options)
     return fs
 
 
-def get_file_age(file_info: dict[str, str | int | float | datetime.datetime]) -> int:
+def get_file_age(file_info: dict[str, str | int | float]) -> int:
     """
     Get the age of a file.
 
@@ -149,33 +150,12 @@ def get_file_age(file_info: dict[str, str | int | float | datetime.datetime]) ->
     Returns:
         datetime.timedelta: The age of the file.
     """
-    created_at: datetime.datetime | None = None
     if ctime := file_info.get("ctime"):
-        if isinstance(ctime, str):
-            created_at = datetime.datetime.fromisoformat(ctime)
-        elif isinstance(ctime, (int | float)):
-            # Convert to float to handle both int and float timestamps
-            created_at = datetime.datetime.fromtimestamp(ctime)
+        created_at = datetime.datetime.fromtimestamp(ctime)
     else:
-        tmp = file_info.get("creation_time")
-        if isinstance(tmp, str):
-            created_at = datetime.datetime.fromisoformat(tmp)
-        elif isinstance(tmp, (int | float)):
-            created_at = datetime.datetime.fromtimestamp(tmp)
-        elif isinstance(tmp, datetime.datetime):
-            created_at = tmp
-        else:
-            raise ValueError(
-                "File creation time is not in the expected format. "
-                "Expected a timestamp, ISO format string, or datetime object."
-            )
+        created_at = file_info.get("creation_time")
 
     current_time = datetime.datetime.now(datetime.UTC)
-    if created_at is None:
-        raise ValueError(
-            "File creation time is not available. "
-            "Please provide a valid file_info dictionary."
-        )
     delta = current_time - created_at
     return int(delta.total_seconds())
 
