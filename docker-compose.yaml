@@ -6,7 +6,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./samples:/app/data/samples
+      - /tmp/genai/data:/app/data
+      - /tmp/genai/cache:/app/cache
     depends_on:
       - mem-blackboard
     networks:
