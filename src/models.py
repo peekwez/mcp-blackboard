@@ -1,4 +1,5 @@
-from typing import Any, Literal
+# type: ignore
+from typing import Literal
 
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
@@ -6,15 +7,14 @@ from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
-    abfs: dict[str, Any] | None = None
-    s3: dict[str, Any] | None = None
-    gcs: dict[str, Any] | None = None
-    sftp: dict[str, Any] | None = None
-    smb: dict[str, Any] | None = None
+    abfs: dict[str, str] | None = None
+    s3: dict[str, str] | None = None
+    gcs: dict[str, str] | None = None
+    sftp: dict[str, str] | None = None
+    smb: dict[str, str] | None = None
 
 
 class ConverterConfig(BaseModel):
-    azure_document_key: str | None = None
     azure_document_endpoint: str | None = None
     openai_api_key: str | None = None
     openai_api_base: str | None = None

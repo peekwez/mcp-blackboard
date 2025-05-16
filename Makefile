@@ -5,18 +5,18 @@ all: down build clean up check
 sync:
 	uv sync --all-extras --all-packages --group dev
 
-format: 
+format:
 	uv run ruff format
 	uv run ruff check --fix
 
-lint: 
+lint:
 	uv run ruff check
 
-mypy: 
+mypy:
 	uv run mypy .
 
-tests: 
-	uv run pytest 
+tests:
+	uv run pytest
 
 coverage:
 	uv run coverage run -m pytest
@@ -29,11 +29,17 @@ debug:
 build:
 	docker build -t mcp/blackboard .
 
+link-data:
+	unlink /tmp/genai/data/bb-samples || true
+	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
+	ls -l /tmp/genai/data/bb-samples/
+
 run:
 	docker run -it --rm \
 		--env-file .env \
 		-p 8000:8000 \
-		-v ./samples:/app/samples \
+		-v /tmp/genai/data:/app/data \
+		-v /tmp/genai/cache:/app/cache \
 		--name mcp-blackboard \
 		mcp/blackboard
 

@@ -36,7 +36,7 @@ def load_config(env_file: str) -> AppConfig:
     load_dotenv(env_file, override=True)
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
-    template = env.get_template("config.yml.j2")
+    template = env.get_template("config.yaml.j2")
 
     rendered_yaml: str = template.render(env=os.environ)
 
@@ -82,7 +82,7 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
         )
     elif url.lower().endswith((".pdf", ".x-pdf")):
         params = ConverterParams(
-            docintel_endpoint=app_config.converter.azure_document_endpoint,
+            docintel_endpoint=app_config.converter.azure_document_endpoint
         )
 
     return params.model_dump()
