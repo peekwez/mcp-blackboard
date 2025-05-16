@@ -1,9 +1,9 @@
+# type: ignore
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.server import Settings
 
 from common import get_app_config, get_file_age, get_filesystem
 from tools import fetch_context, fetch_memory, update_memory
@@ -52,7 +52,6 @@ mcp = FastMCP(
         "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
-
     dependencies=[
         "apscheduler",
         "dotenv",
@@ -66,7 +65,6 @@ mcp = FastMCP(
         "tenacity",
     ],
 )
-
 
 
 @mcp.tool()

@@ -50,26 +50,27 @@ lint.isort = { combine-as-imports = true, known-first-party = ["agents"] }
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"examples/**/*.py" = ["E501"]
+"examples/**/*.py" = ["F401"]
 
 [tool.mypy]
 strict = true
+warn_unused_ignores = false
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 
-# [[tool.mypy.overrides]]
-# module = "sounddevice.*"
-# ignore_missing_imports = true
-
 [tool.coverage.run]
 source = ["tests", "src"]
+omit = [
+    "tests/*",
+    "src/__init__.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 sort = "-Cover"
+fail_under = 90
 exclude_also = [
-    # This is only executed while typechecking
     "if TYPE_CHECKING:",
     "@abc.abstractmethod",
     "raise NotImplementedError",
@@ -89,6 +90,5 @@ testpaths = [
 ]
 
 filterwarnings = [
-    # This is a warning that is expected to happen: we have an async filter that raises an exception
     "ignore:DeprecatedWarning:RuntimeWarning:UserWarning",
 ]

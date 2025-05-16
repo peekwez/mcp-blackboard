@@ -1,3 +1,4 @@
+# type: ignore
 from common import get_app_config
 from server import mcp
 

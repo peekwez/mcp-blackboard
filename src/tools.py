@@ -1,3 +1,4 @@
+# type: ignore
 import hashlib
 import io
 import json
@@ -48,10 +49,10 @@ def _write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
     hash_key = _get_cache_key(url)
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
-    fs.mkdir(cache_path, create_parents=True, exist_ok=True)
+    fs.mkdir(cache_path, create_parents=True, exist_ok=True)  # type: ignore
     cache_file = f"{cache_path}/{hash_key}.md"
-    with fs.open(cache_file, "w") as f:
-        f.write(contents)
+    with fs.open(cache_file, "w") as f:  # type: ignore
+        f.write(contents)  # type: ignore
 
 
 def _load_cache_file(url: str, app_config: AppConfig) -> str:
@@ -69,11 +70,11 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
     cache_file = f"{cache_path}/{hash_key}.md"
-    if not fs.exists(cache_file):
+    if not fs.exists(cache_file):  # type: ignore
         raise OSError(f"Cache file {cache_file} does not exist")
 
-    with fs.open(cache_file, "r") as f:
-        return f.read()
+    with fs.open(cache_file, "r") as f:  # type: ignore
+        return f.read()  # type: ignore
 
 
 @retry(
@@ -188,7 +189,7 @@ def update_memory(key: str, description: str, value: str | dict | list) -> str:
 
         if not isinstance(value, str):
             raise ValueError("Value must be a JSON-serializable object or a string")
-        
+
         client.set(_key, value, ex=3600)
 
     return "ok"

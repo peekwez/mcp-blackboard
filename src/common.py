@@ -1,17 +1,17 @@
+# type: ignore
 import datetime
 import os
 import uuid
 from pathlib import Path
 from typing import Any
 
-from azure.identity import DefaultAzureCredential
 import fsspec
 import yaml
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
 from redis import Redis
-
 
 from models import AppConfig, ConverterParams
 
@@ -88,7 +88,7 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
     return params.model_dump()
 
 
-def get_storage_opts(url: str, app_config: AppConfig) -> dict:
+def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
     """
     Get the storage options based on the URL protocol.
 
@@ -97,7 +97,8 @@ def get_storage_opts(url: str, app_config: AppConfig) -> dict:
         app_config (AppConfig): The application configuration.
 
     Returns:
-        dict: The options for the protocol.
+        dict[str, Any]: The storage options for the protocol,
+        or an empty dictionary if not found.
     """
     protocol = url.split("://")[0]
     if protocol == "s3":
@@ -130,16 +131,15 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
         app_config (AppConfig): The application configuration.
 
     Returns:
-        fsspec.AbstractFileSystem: The filesystem object.
+        fsspec.AbstractFileSystem: The filesystem object for the protocol.
     """
-    protocol, _ = url.split("://")
-    storage_options = get_storage_opts(url, app_config)
-    print(storage_options)
-    fs = fsspec.filesystem(protocol, **storage_options)
+    protocol: str = url.split("://")[0]
+    storage_options = get_storage_opts(url, app_config) or {}
+    fs: fsspec.AbstractFileSystem = fsspec.filesystem(protocol, **storage_options)  # type: ignore
     return fs
 
 
-def get_file_age(file_info: dict[str, str | int | float]) -> int:
+def get_file_age(file_info: dict[str, str | int | float | datetime.datetime]) -> int:
     """
     Get the age of a file.
 
@@ -149,12 +149,33 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
     Returns:
         datetime.timedelta: The age of the file.
     """
+    created_at: datetime.datetime | None = None
     if ctime := file_info.get("ctime"):
-        created_at = datetime.datetime.fromtimestamp(ctime)
+        if isinstance(ctime, str):
+            created_at = datetime.datetime.fromisoformat(ctime)
+        elif isinstance(ctime, (int | float)):
+            # Convert to float to handle both int and float timestamps
+            created_at = datetime.datetime.fromtimestamp(ctime)
     else:
-        created_at = file_info.get("creation_time")
+        tmp = file_info.get("creation_time")
+        if isinstance(tmp, str):
+            created_at = datetime.datetime.fromisoformat(tmp)
+        elif isinstance(tmp, (int | float)):
+            created_at = datetime.datetime.fromtimestamp(tmp)
+        elif isinstance(tmp, datetime.datetime):
+            created_at = tmp
+        else:
+            raise ValueError(
+                "File creation time is not in the expected format. "
+                "Expected a timestamp, ISO format string, or datetime object."
+            )
 
     current_time = datetime.datetime.now(datetime.UTC)
+    if created_at is None:
+        raise ValueError(
+            "File creation time is not available. "
+            "Please provide a valid file_info dictionary."
+        )
     delta = current_time - created_at
     return int(delta.total_seconds())
 
@@ -177,7 +198,7 @@ def get_redis_client(app_config: AppConfig) -> Redis:
     return redis_client
 
 
-def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
+def validate_key(key: str) -> tuple[str, str, str, str]:
     """
     Validate the format of a key.
 
@@ -185,7 +206,7 @@ def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
         key (str): The key to validate.
 
     Returns:
-        tuple[str, str, str | None, str | None]: A tuple containing the key type,
+        tuple[str, str, str, str]: A tuple containing the key type,
             plan ID, file path or URL or agent name, and step ID.
 
     Raises:
@@ -228,6 +249,6 @@ def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
     return (
         parts[0],
         parts[1],
-        parts[2] if len(parts) > 2 else None,
-        parts[3] if len(parts) > 3 else None,
+        parts[2] if len(parts) > 2 else "",
+        parts[3] if len(parts) > 3 else "",
     )

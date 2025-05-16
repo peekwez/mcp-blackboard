@@ -1,14 +1,16 @@
+from typing import Any, Literal
+
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
-    abfs: dict | None = None
-    s3: dict | None = None
-    gcs: dict | None = None
-    sftp: dict | None = None
-    smb: dict | None = None
+    abfs: dict[str, Any] | None = None
+    s3: dict[str, Any] | None = None
+    gcs: dict[str, Any] | None = None
+    sftp: dict[str, Any] | None = None
+    smb: dict[str, Any] | None = None
 
 
 class ConverterConfig(BaseModel):
@@ -39,7 +41,7 @@ class RedisConfig(BaseModel):
 
 class AppConfig(BaseSettings):
     cache_path: str
-    mcp_transport: str
+    mcp_transport: Literal["stdio", "sse"]
     redis: RedisConfig
     storage: StorageConfig
     converter: ConverterConfig
