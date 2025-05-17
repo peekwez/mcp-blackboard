@@ -11,10 +11,10 @@ It is designed to be dropped into any MCP‑compatible workflow so your multi-ag
    <img src="https://img.shields.io/badge/License-MIT-green" />
    <img src="https://img.shields.io/badge/Protocol-MCP-informational" />
    <a href="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions">
-      <img src="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions/workflows/ci-checks.yaml/badge.svg" alt="CI Status">
+      <img src="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions/workflows/ci-checks.yml/badge.svg" alt="CI Status">
    </a>
-   <img src="https://img.shields.io/badge/tests-57%20passed-brightgreen" alt="Test Status" />
-   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage Status" />
+   <!-- <img src="https://img.shields.io/badge/tests-57%20passed-brightgreen" alt="Test Status" />
+   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage Status" /> -->
 </div>
 
 ---
