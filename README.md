@@ -13,9 +13,8 @@ It is designed to be dropped into any MCP‑compatible workflow so your multi-ag
    <a href="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions">
       <img src="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions/workflows/ci-checks.yaml/badge.svg" alt="CI Status">
    </a>
-   <a href="https://codecov.io/gh/pwc-ca-adv-genai-factory/mcp-blackboard">
-      <img src="https://codecov.io/gh/pwc-ca-adv-genai-factory/mcp-blackboard/branch/main/graph/badge.svg" alt="Coverage Status">
-   </a>
+   <img src="https://img.shields.io/badge/tests-57%20passed-brightgreen" alt="Test Status" />
+   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage Status" />
 </div>
 
 ---

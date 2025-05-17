@@ -1,0 +1,43 @@
+name: Update Coverage Badges
+
+on:
+  workflow_run:
+    workflows: ["Check format, lint, mypy, tests and coverage"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  update-badges:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: make sync
+
+      - name: Run coverage
+        id: coverage
+        run: |
+          make coverage || true
+
+      - name: Update badges
+        run: |
+          chmod +x ./update-badges.sh
+          ./update-badges.sh
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "docs: Update test and coverage badges [skip ci]"
+          file_pattern: "README.md COVERAGE.md"
