@@ -1,0 +1,76 @@
+{
+  // VS Code Tasks for common Makefile targets and scripts
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "sync",
+      "type": "shell",
+      "command": "uv sync --all-extras --all-packages --group dev"
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "uv run ruff format && uv run ruff check --fix"
+    },
+    {
+      "label": "lint",
+      "type": "shell",
+      "command": "uv run ruff check"
+    },
+    {
+      "label": "mypy",
+      "type": "shell",
+      "command": "uv run mypy ."
+    },
+    {
+      "label": "tests",
+      "type": "shell",
+      "command": "uv run pytest"
+    },
+    {
+      "label": "coverage",
+      "type": "shell",
+      "command": "uv run coverage run -m pytest && uv run coverage xml -o coverage.xml && uv run coverage report -m --fail-under=95"
+    },
+    {
+      "label": "debug",
+      "type": "shell",
+      "command": "uv run src/main.py"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "docker build -t mcp/blackboard ."
+    },
+    {
+      "label": "run",
+      "type": "shell",
+      "command": "docker run -it --rm --env-file .env -p 8000:8000 -v ./samples:/app/samples --name mcp-blackboard mcp/blackboard"
+    },
+    {
+      "label": "up",
+      "type": "shell",
+      "command": "docker compose up -d"
+    },
+    {
+      "label": "down",
+      "type": "shell",
+      "command": "docker compose down"
+    },
+    {
+      "label": "check",
+      "type": "shell",
+      "command": "docker compose ps"
+    },
+    {
+      "label": "inspect",
+      "type": "shell",
+      "command": "npx @modelcontextprotocol/inspector node build/index.js"
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "docker system prune -f && docker container prune -f"
+    }
+  ]
+}

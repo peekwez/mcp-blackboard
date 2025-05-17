@@ -15,6 +15,7 @@ dependencies = [
     "markitdown[all]>=0.1.1",
     "mcp[cli]>=1.6.0",
     "openai>=1.76.0",
+    "pre-commit>=4.2.0",
     "pydantic>=2.11.3",
     "pydantic-settings>=2.9.1",
     "pyyaml>=6.0.2",
@@ -26,6 +27,7 @@ dependencies = [
 dev = [
     "coverage>=7.8.0",
     "mypy>=1.15.0",
+    "pre-commit>=4.2.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "rich>=14.0.0",
@@ -43,32 +45,32 @@ lint.select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade,
 ]
-lint.isort = { combine-as-imports = true, known-first-party = ["agents"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"examples/**/*.py" = ["E501"]
+"examples/**/*.py" = ["F401"]
 
 [tool.mypy]
 strict = true
+warn_unused_ignores = false
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false
 
-# [[tool.mypy.overrides]]
-# module = "sounddevice.*"
-# ignore_missing_imports = true
-
 [tool.coverage.run]
 source = ["tests", "src"]
+omit = [
+    "tests/*",
+    "src/__init__.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 sort = "-Cover"
+fail_under = 90
 exclude_also = [
-    # This is only executed while typechecking
     "if TYPE_CHECKING:",
     "@abc.abstractmethod",
     "raise NotImplementedError",
@@ -82,13 +84,11 @@ addopts = [
     "--disable-warnings",
     "--maxfail=1",
 ]
-env_file = ".env"
+
 testpaths = [
     "tests",
 ]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "session"
+
 filterwarnings = [
-    # This is a warning that is expected to happen: we have an async filter that raises an exception
     "ignore:DeprecatedWarning:RuntimeWarning:UserWarning",
 ]

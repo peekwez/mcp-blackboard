@@ -1,0 +1,54 @@
+{
+  "id": "65710c2eccda4e9d8898c50816c5d601",
+  "goal": "Write a one-page memo presenting the results of the analysis of the mortgage application for a client, based on provided documents and bank rates.",
+  "steps": [
+    {
+      "id": 1,
+      "agent": "Researcher",
+      "prompt": "Step 1: Gather and summarize the contents of the client's letter of employment, pay stub, and credit report from available context or web as needed. Additionally, collect the latest posted 5-year fixed mortgage interest rates from 5 major Canadian banks (e.g., RBC, TD, Scotiabank, BMO, CIBC). Provide concise notes including full text excerpts where possible.",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": []
+    },
+    {
+      "id": 2,
+      "agent": "Extractor",
+      "prompt": "Step 2: From the Researcher notes, extract the following fields into a single JSON object: client_name, employer_name_letter, employer_name_paystub, annual_salary_letter, paystub_gross_pay_period_amount, paystub_pay_period (e.g., weekly/bi-weekly/monthly), credit_score, bank_rates (array of {bank, rate}).",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": [1]
+    },
+    {
+      "id": 3,
+      "agent": "Analyzer",
+      "prompt": "Step 3: Using the extracted JSON, perform the required analysis:\n1. Convert pay-stub gross amount to an annual figure and compute the percent variance from annual_salary_letter.\n2. Determine if variance ≤ 5% (salary_ok) and if credit_score ≥ 650 (credit_ok).\n3. Calculate mortgage_qualify_amount = 5 × annual_salary_letter.\n4. Compute average_interest_rate of the 5 bank rates.\n5. Apply down-payment rules: 5% if first-time buyer and mortgage < $1,000,000; otherwise 20% (if ≥ $1,000,000).\n6. Estimate monthly_payment for a 25-year amortization using the average interest rate (simple mortgage payment formula).\n7. Assess affordability assuming that monthly payment should not exceed 35% of monthly gross income.\n8. Produce clear bullet-point recommendations.",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": [2]
+    },
+    {
+      "id": 4,
+      "agent": "Writer",
+      "prompt": "Step 4: Draft a professional one-page memo addressed to internal stakeholders summarizing the mortgage application analysis results for the client. Include: client and employer verification summary, salary variance finding, credit score statement, qualified mortgage amount, required down payment, average interest rate and calculated monthly payment, affordability conclusion, and actionable recommendations.",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": [3]
+    },
+    {
+      "id": 5,
+      "agent": "Editor",
+      "prompt": "Step 5: Edit the memo for clarity, cohesion, tone, and grammatical accuracy while keeping it within one page (~500 words). Ensure all required elements from the instructions are present and consistent.",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": [4]
+    },
+    {
+      "id": 6,
+      "agent": "Evaluator",
+      "prompt": "Step 6: Evaluate the edited memo against the original task requirements. Output a JSON object with fields: score ('pass' or 'fail') and feedback explaining the decision.",
+      "revision": 1,
+      "status": "pending",
+      "depends_on": [5]
+    }
+  ]
+}

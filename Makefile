@@ -5,43 +5,56 @@ all: down build clean up check
 sync:
 	uv sync --all-extras --all-packages --group dev
 
-format: 
+format:
 	uv run ruff format
 	uv run ruff check --fix
 
-lint: 
+lint:
 	uv run ruff check
 
-mypy: 
+mypy:
 	uv run mypy .
 
-tests: 
-	uv run pytest 
+tests:
+	uv run pytest
 
 coverage:
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m --fail-under=95
 
-debug:
+
+
+link-path:
+	@echo "Linking path..."
+	mkdir -p /tmp/genai/data || true
+	mkdir -p /tmp/genai/cache || true
+
+link-data: link-path
+	unlink /tmp/genai/data/bb-samples || true
+	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
+	ls -l /tmp/genai/data/bb-samples/
+
+debug: link-data
 	uv run src/main.py
 
 build:
 	docker build -t mcp/blackboard .
 
-run:
+run: link-data
 	docker run -it --rm \
-		--env-file .env \
+		--env-file .env.docker \
 		-p 8000:8000 \
-		-v ./samples:/app/samples \
+		-v /tmp/genai/data:/app/data \
+		-v /tmp/genai/cache:/app/cache \
 		--name mcp-blackboard \
 		mcp/blackboard
 
-up:
-	docker compose up -d
-
 down:
 	docker compose down
+
+up: down link-data
+	docker compose up -d
 
 check:
 	docker compose ps

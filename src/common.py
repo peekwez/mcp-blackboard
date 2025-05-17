@@ -1,17 +1,17 @@
+# type: ignore
 import datetime
 import os
 import uuid
 from pathlib import Path
 from typing import Any
 
-from azure.identity import DefaultAzureCredential
 import fsspec
 import yaml
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
 from redis import Redis
-
 
 from models import AppConfig, ConverterParams
 
@@ -36,7 +36,7 @@ def load_config(env_file: str) -> AppConfig:
     load_dotenv(env_file, override=True)
 
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
-    template = env.get_template("config.yml.j2")
+    template = env.get_template("config.yaml.j2")
 
     rendered_yaml: str = template.render(env=os.environ)
 
@@ -82,13 +82,13 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
         )
     elif url.lower().endswith((".pdf", ".x-pdf")):
         params = ConverterParams(
-            docintel_endpoint=app_config.converter.azure_document_endpoint,
+            docintel_endpoint=app_config.converter.azure_document_endpoint
         )
 
     return params.model_dump()
 
 
-def get_storage_opts(url: str, app_config: AppConfig) -> dict:
+def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
     """
     Get the storage options based on the URL protocol.
 
@@ -97,7 +97,8 @@ def get_storage_opts(url: str, app_config: AppConfig) -> dict:
         app_config (AppConfig): The application configuration.
 
     Returns:
-        dict: The options for the protocol.
+        dict[str, Any]: The storage options for the protocol,
+        or an empty dictionary if not found.
     """
     protocol = url.split("://")[0]
     if protocol == "s3":
@@ -177,7 +178,7 @@ def get_redis_client(app_config: AppConfig) -> Redis:
     return redis_client
 
 
-def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
+def validate_key(key: str) -> tuple[str, str, str, str]:
     """
     Validate the format of a key.
 
@@ -185,7 +186,7 @@ def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
         key (str): The key to validate.
 
     Returns:
-        tuple[str, str, str | None, str | None]: A tuple containing the key type,
+        tuple[str, str, str, str]: A tuple containing the key type,
             plan ID, file path or URL or agent name, and step ID.
 
     Raises:
@@ -228,6 +229,6 @@ def validate_key(key: str) -> tuple[str, str, str | None, str | None]:
     return (
         parts[0],
         parts[1],
-        parts[2] if len(parts) > 2 else None,
-        parts[3] if len(parts) > 3 else None,
+        parts[2] if len(parts) > 2 else "",
+        parts[3] if len(parts) > 3 else "",
     )

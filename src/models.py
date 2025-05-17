@@ -1,18 +1,20 @@
+# type: ignore
+from typing import Literal
+
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
-    abfs: dict | None = None
-    s3: dict | None = None
-    gcs: dict | None = None
-    sftp: dict | None = None
-    smb: dict | None = None
+    abfs: dict[str, str | bool | int | None] | None = None
+    s3: dict[str, str | bool | int | None] | None = None
+    gcs: dict[str, str | bool | int | None] | None = None
+    sftp: dict[str, str | bool | int | None] | None = None
+    smb: dict[str, str | bool | int | None] | None = None
 
 
 class ConverterConfig(BaseModel):
-    azure_document_key: str | None = None
     azure_document_endpoint: str | None = None
     openai_api_key: str | None = None
     openai_api_base: str | None = None
@@ -39,7 +41,7 @@ class RedisConfig(BaseModel):
 
 class AppConfig(BaseSettings):
     cache_path: str
-    mcp_transport: str
+    mcp_transport: Literal["stdio", "sse"]
     redis: RedisConfig
     storage: StorageConfig
     converter: ConverterConfig

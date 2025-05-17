@@ -2,19 +2,20 @@ services:
   mcp-blackboard:
     image: mcp/blackboard
     container_name: mcp-blackboard
-    env_file: .env
+    env_file: .env.docker
     ports:
       - "8000:8000"
     volumes:
-      - ./samples:/app/data/samples
+      - /tmp/genai/data:/app/data
+      - /tmp/genai/cache:/app/cache
     depends_on:
-      - redis-blackboard
+      - mem-blackboard
     networks:
       - mcp-network
 
-  redis-blackboard:
-    image: redis:latest
-    container_name: redis-blackboard
+  mem-blackboard:
+    image: redis/redis-stack:latest
+    container_name: mem-blackboard
     ports:
       - "6380:6379"
     networks:
