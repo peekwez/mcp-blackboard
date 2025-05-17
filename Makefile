@@ -2,6 +2,10 @@
 
 all: down build clean up check
 
+push:
+	git push origin HEAD
+	git push --tags
+
 sync:
 	uv sync --all-extras --all-packages --group dev
 
