@@ -52,16 +52,16 @@ jobs:
       - name: Run tests via Makefile
         run: make coverage
 
-      - name: Update badges
-        run: |
-          chmod +x ./update-badges.sh
-          ./update-badges.sh
+      # - name: Update badges
+      #   run: |
+      #     chmod +x ./update-badges.sh
+      #     ./update-badges.sh
 
-      - name: Create patch for badge updates
-        run: |
-          git diff README.md COVERAGE.md > badge-updates.patch || true
-          if [ -s badge-updates.patch ]; then
-            echo "Patch created for badge updates. Please review and commit manually."
-          else
-            echo "No changes to badges detected."
-          fi
+      # - name: Create patch for badge updates
+      #   run: |
+      #     git diff README.md COVERAGE.md > badge-updates.patch || true
+      #     if [ -s badge-updates.patch ]; then
+      #       echo "Patch created for badge updates. Please review and commit manually."
+      #     else
+      #       echo "No changes to badges detected."
+      #     fi
