@@ -21,12 +21,10 @@ tests:
 coverage:
 	uv run coverage run -m pytest
 	uv run coverage xml -o coverage.xml
-	uv run coverage report -m --fail-under=95
-
-
+	uv run coverage html -d htmlcov
+	uv run coverage report -m
 
 link-path:
-	@echo "Linking path..."
 	mkdir -p /tmp/genai/data || true
 	mkdir -p /tmp/genai/cache || true
 

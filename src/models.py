@@ -52,5 +52,5 @@ class ConverterParams(BaseModel):
 
     enable_plugins: bool = False
     llm_client: OpenAI | None = None
-    llm_model: str = "gpt-4o"
+    llm_model: str | None = None
     docintel_endpoint: str | None = None
