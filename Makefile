@@ -23,27 +23,34 @@ coverage:
 	uv run coverage xml -o coverage.xml
 	uv run coverage report -m --fail-under=95
 
-debug:
+
+
+link-path:
+	@echo "Linking path..."
+	mkdir -p /tmp/genai/data || true
+	mkdir -p /tmp/genai/cache || true
+
+link-data: link-path
+	unlink /tmp/genai/data/bb-samples || true
+	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
+	ls -l /tmp/genai/data/bb-samples/
+
+debug: link-data
 	uv run src/main.py
 
 build:
 	docker build -t mcp/blackboard .
 
-link-data:
-	unlink /tmp/genai/data/bb-samples || true
-	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
-	ls -l /tmp/genai/data/bb-samples/
-
-run:
+run: link-data
 	docker run -it --rm \
-		--env-file .env \
+		--env-file .env.docker \
 		-p 8000:8000 \
 		-v /tmp/genai/data:/app/data \
 		-v /tmp/genai/cache:/app/cache \
 		--name mcp-blackboard \
 		mcp/blackboard
 
-up:
+up: link-data
 	docker compose up -d
 
 down:

@@ -147,3 +147,5 @@ results
 tmp
 Archive.zip
 src.zip
+
+.env*
