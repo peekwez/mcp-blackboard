@@ -50,11 +50,11 @@ run: link-data
 		--name mcp-blackboard \
 		mcp/blackboard
 
-up: link-data
-	docker compose up -d
-
 down:
 	docker compose down
+
+up: down link-data
+	docker compose up -d
 
 check:
 	docker compose ps
