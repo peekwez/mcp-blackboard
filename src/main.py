@@ -9,6 +9,6 @@ class ContextBuilderMCPServer:
         mcp.run(transport=app_config.mcp_transport)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     server = ContextBuilderMCPServer()
     server.run()
