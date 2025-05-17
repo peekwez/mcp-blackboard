@@ -1,4 +1,4 @@
-name: Check format, lint, mypy, tests and coverage
+name: Run CI Checks
 
 on:
   pull_request:

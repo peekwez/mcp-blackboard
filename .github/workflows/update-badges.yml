@@ -2,7 +2,7 @@ name: Update Coverage Badges
 
 on:
   workflow_run:
-    workflows: ["Check format, lint, mypy, tests and coverage"]
+    workflows: ["Run CI Checks"]
     types:
       - completed
   workflow_dispatch:
