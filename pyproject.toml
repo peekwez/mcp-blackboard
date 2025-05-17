@@ -29,6 +29,7 @@ dev = [
     "mypy>=1.15.0",
     "pre-commit>=4.2.0",
     "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
     "pytest-cov>=6.1.1",
     "rich>=14.0.0",
     "ruff>=0.11.7",
@@ -78,6 +79,7 @@ exclude_also = [
 ]
 
 [tool.pytest.ini_options]
+pythonpath = "src/"
 addopts = [
     "--pdb",
     "--tb=short",
@@ -92,3 +94,5 @@ testpaths = [
 filterwarnings = [
     "ignore:DeprecatedWarning:RuntimeWarning:UserWarning",
 ]
+
+asyncio_default_fixture_loop_scope = "function"
