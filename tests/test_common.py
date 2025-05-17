@@ -1,15 +1,11 @@
 # type: ignore
-import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest  # noqa F401
 
 from common import (
     get_app_config,
     get_converter_opts,
-    get_file_age,
-    get_filesystem,
-    get_redis_client,
     get_storage_opts,
     load_config,
     validate_key,
@@ -142,105 +138,6 @@ def test_get_storage_opts_unsupported(app_config):
     # Setup & Execute & Assert
     with pytest.raises(ValueError, match="Unsupported protocol"):
         get_storage_opts("unknown://path/to/file.pdf", app_config)
-
-
-@patch("common.get_storage_opts")
-@patch("common.fsspec.filesystem")
-def test_get_filesystem(
-    mock_filesystem_fn, mock_get_storage_opts, app_config, mock_filesystem
-):
-    """Test getting filesystem for a URL."""
-    # Setup
-    mock_get_storage_opts.return_value = {"key": "value"}
-    mock_filesystem_fn.return_value = mock_filesystem
-
-    # Execute
-    result = get_filesystem("s3://bucket/path/to/file.pdf", app_config)
-
-    # Assert
-    mock_filesystem_fn.assert_called_once_with("s3", key="value")
-    assert result == mock_filesystem
-
-
-def test_get_file_age():
-    """Test getting file age."""
-    # Setup
-    now = datetime.datetime.now(datetime.UTC)
-    one_hour_ago = now - datetime.timedelta(hours=1)
-
-    file_info_ctime = {"ctime": one_hour_ago.timestamp()}
-    file_info_creation_time = {"creation_time": one_hour_ago}
-
-    # Execute & Assert
-    age_ctime = get_file_age(file_info_ctime)
-    assert 3500 <= age_ctime <= 3700  # Around 1 hour in seconds
-
-    age_creation_time = get_file_age(file_info_creation_time)
-    assert 3500 <= age_creation_time <= 3700
-
-
-def test_get_file_age_with_naive_datetime():
-    """Test getting file age with naive datetime."""
-    # Setup
-    import datetime as dt
-
-    # Create a datetime without timezone info
-    naive_datetime = dt.datetime.now() - dt.timedelta(hours=1)
-    file_info_naive = {"creation_time": naive_datetime}
-
-    # Execute
-    age_naive = get_file_age(file_info_naive)
-
-    # Assert - We're just testing that it doesn't crash and returns a reasonable value
-    assert age_naive > 0  # At least some time has passed
-
-
-@patch("common.redis_client", None)
-@patch("common.Redis")
-def test_get_redis_client(mock_redis_class, app_config, mock_redis):
-    """Test getting Redis client."""
-    # Setup
-    mock_redis_class.return_value = mock_redis
-
-    # Execute
-    result = get_redis_client(app_config)
-
-    # Assert
-    assert result == mock_redis
-    mock_redis_class.assert_called_once()
-
-    # Test caching
-    with patch("common.Redis") as mock_redis_class_2:
-        result2 = get_redis_client(app_config)
-        mock_redis_class_2.assert_not_called()
-        assert result2 == mock_redis
-
-
-@patch("common.redis_client", None)
-@patch("common.Redis")
-@patch("common.DefaultAzureCredential")
-def test_get_redis_client_azure(
-    mock_azure_cred, mock_redis_class, app_config, mock_redis
-):
-    """Test getting Redis client with Azure credentials."""
-    # Setup
-    mock_redis_class.return_value = mock_redis
-    mock_cred = MagicMock()
-    mock_azure_cred.return_value = mock_cred
-    mock_cred.get_token.return_value.token = "azure-token"
-
-    app_config_azure = app_config.model_copy(deep=True)
-    app_config_azure.redis.host = "test.windows.net"
-
-    # Execute
-    result = get_redis_client(app_config_azure)
-
-    # Assert
-    assert result == mock_redis
-    mock_azure_cred.assert_called_once()
-    mock_cred.get_token.assert_called_once_with("https://redis.azure.com/.default")
-    assert app_config_azure.redis.password == "azure-token"
-    mock_redis_class.assert_called_once()
 
 
 def test_validate_key():

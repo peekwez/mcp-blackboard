@@ -1,13 +1,10 @@
 # type: ignore
-import datetime
 import os
 import uuid
 from pathlib import Path
 from typing import Any
 
-import fsspec
 import yaml
-from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
@@ -120,65 +117,6 @@ def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
             f"file, s3, abfs, gcs, sftp, smb, http"
         )
         raise ValueError(message)
-
-
-def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem:
-    """
-    Get the filesystem object based on the URL protocol.
-
-    Args:
-        url (str): The URL to determine the filesystem for.
-        app_config (AppConfig): The application configuration.
-
-    Returns:
-        fsspec.AbstractFileSystem: The filesystem object.
-    """
-    protocol, _ = url.split("://")
-    storage_options = get_storage_opts(url, app_config)
-    print(storage_options)
-    fs = fsspec.filesystem(protocol, **storage_options)
-    return fs
-
-
-def get_file_age(file_info: dict[str, str | int | float]) -> int:
-    """
-    Get the age of a file.
-
-    Args:
-        file_info (dict): The file information dictionary.
-
-    Returns:
-        datetime.timedelta: The age of the file.
-    """
-    if ctime := file_info.get("ctime"):
-        created_at = datetime.datetime.fromtimestamp(ctime, tz=datetime.UTC)
-    else:
-        created_at = file_info.get("creation_time")
-        # If created_at doesn't have timezone info but is aware, add UTC
-        if created_at and not getattr(created_at, "tzinfo", None):  # pragma: no cover
-            created_at = created_at.replace(tzinfo=datetime.UTC)
-
-    current_time = datetime.datetime.now(datetime.UTC)
-    delta = current_time - created_at
-    return int(delta.total_seconds())
-
-
-def get_redis_client(app_config: AppConfig) -> Redis:
-    """
-    Get the Redis client for shared memory.
-
-    Returns:
-        Redis: The Redis client for shared memory.
-    """
-
-    global redis_client
-    if redis_client is None:
-        if "windows.net" in app_config.redis.host:
-            cred = DefaultAzureCredential()
-            token = cred.get_token("https://redis.azure.com/.default")
-            app_config.redis.password = token.token
-        redis_client = Redis(**app_config.redis.model_dump())
-    return redis_client
 
 
 def validate_key(key: str) -> tuple[str, str, str, str]:
