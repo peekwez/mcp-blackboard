@@ -4,13 +4,18 @@
 
 `mcp-blackboard` exposes a simple HTTP/SSE interface that lets multiple AI agents **store, and retrieve context and results**—documents, embeddings, structured objects, and more—on a shared “blackboard”.
 
-It is designed to be dropped into any MCP‑compatible workflow so your planner,
-researcher, extractor, analyzer, writer, editor, and evaluator agents can collaborate without reinventing persistence.
+It is designed to be dropped into any MCP‑compatible workflow so your multi-agent system can share state and collaborate without reinventing persistence.
 
 <div align="center">
-<img src="https://img.shields.io/badge/Python-3.12%2B-blue" />
-<img src="https://img.shields.io/badge/License-MIT-green" />
-<img src="https://img.shields.io/badge/Protocol-MCP-informational" />
+   <img src="https://img.shields.io/badge/Python-3.12%2B-blue" />
+   <img src="https://img.shields.io/badge/License-MIT-green" />
+   <img src="https://img.shields.io/badge/Protocol-MCP-informational" />
+   <a href="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions">
+      <img src="https://github.com/pwc-ca-adv-genai-factory/mcp-blackboard/actions/workflows/ci-checks.yaml/badge.svg" alt="CI Status">
+   </a>
+   <a href="https://codecov.io/gh/pwc-ca-adv-genai-factory/mcp-blackboard">
+      <img src="https://codecov.io/gh/pwc-ca-adv-genai-factory/mcp-blackboard/branch/main/graph/badge.svg" alt="Coverage Status">
+   </a>
 </div>
 
 ---
@@ -22,28 +27,28 @@ researcher, extractor, analyzer, writer, editor, and evaluator agents can collab
 The following tools are available in `mcp-blackboard`:
 
 - **`save_plan(plan_id: str, plan: dict | str) -> str`**
-   Save a plan to the shared state.
+  Save a plan to the shared state.
 
 - **`mark_plan_as_completed(plan_id: str, step_id: str) -> str`**
-   Mark a plan step as completed in the shared state.
+  Mark a plan step as completed in the shared state.
 
 - **`save_result(plan_id: str, agent_name: str, step_id: str, description: str, result: str | dict) -> str`**
-   Save a result to the shared state.
+  Save a result to the shared state.
 
 - **`save_context_description(plan_id: str, file_path_or_url: str, description: str) -> str`**
-   Write a context description to the shared state.
+  Write a context description to the shared state.
 
 - **`get_blackboard(plan_id: str) -> str | dict | None`**
-   Fetch a blackboard entry for a plan.
+  Fetch a blackboard entry for a plan.
 
 - **`get_plan(plan_id: str) -> str | dict | None`**
-   Fetch a plan from the shared state.
+  Fetch a plan from the shared state.
 
 - **`get_result(plan_id: str, agent_name: str, step_id: str) -> str | dict | None`**
-   Fetch a result from the shared state.
+  Fetch a result from the shared state.
 
 - **`get_context(file_path_or_url: str, use_cache: bool = True) -> str`**
-   Read and convert media content to Markdown format.
+  Read and convert media content to Markdown format.
 
 ### File Cache Management Scheduler
 

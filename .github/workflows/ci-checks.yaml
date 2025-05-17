@@ -1,0 +1,60 @@
+name: Check format, lint, mypy, tests and coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  checks:
+    # Skip the whole job when the **head** branch _is_ `develop`
+    # and the **base** branch _is_ `main`
+    # (i.e. the PR is develop → main).  Everything else still runs.
+    if: |
+      ${{
+        github.event_name != 'pull_request' ||
+        github.event.pull_request.head.ref != 'develop' ||
+        github.event.pull_request.base.ref != 'main'
+      }}
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv # default wheel cache on Linux/macOS
+          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock', '**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-${{ matrix.python-version }}-
+
+      - name: Sync deps via Makefile
+        run: make sync
+
+      - name: Run format and lint via Makefile
+        run: make format
+
+      - name: Run mypy via Makefile
+        run: make mypy
+
+      - name: Run tests via Makefile
+        run: make coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}

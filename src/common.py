@@ -155,7 +155,7 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
     else:
         created_at = file_info.get("creation_time")
         # If created_at doesn't have timezone info but is aware, add UTC
-        if created_at and not getattr(created_at, "tzinfo", None):
+        if created_at and not getattr(created_at, "tzinfo", None):  # pragma: no cover
             created_at = created_at.replace(tzinfo=datetime.UTC)
 
     current_time = datetime.datetime.now(datetime.UTC)

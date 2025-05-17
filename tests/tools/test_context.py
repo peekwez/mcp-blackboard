@@ -173,3 +173,32 @@ def test_get_file_age():
     # Assert
     assert isinstance(age, int)
     assert age > 0  # The file should be aged since the timestamp is in the past
+
+
+def test_get_file_age_with_naive_datetime():
+    """Test getting file age with naive datetime."""
+    # Setup
+    import datetime as dt
+
+    # Create a datetime without timezone info
+    naive_datetime = dt.datetime.now() - dt.timedelta(hours=1)
+    file_info_naive = {"creation_time": naive_datetime}
+
+    # Execute
+    age_naive = get_file_age(file_info_naive)
+
+    # Assert - We're just testing that it doesn't crash and returns a positive value
+    # The actual value will depend on timezone differences
+    assert age_naive > 0
+
+
+@patch("tools.context.open")
+@patch("tools.context.markitdown.MarkItDown")
+def test_fetch_context_with_file_error(mock_markitdown, mock_open, app_config):
+    """Test error handling when loading a file fails."""
+    # Setup
+    mock_open.side_effect = Exception("File error")
+
+    # Execute & Assert
+    with pytest.raises(OSError, match="Failed to load file from"):
+        fetch_context("file:///path/to/file.pdf", use_cache=False)

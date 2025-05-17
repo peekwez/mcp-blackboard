@@ -107,6 +107,36 @@ def test_get_storage_opts_abfs(app_config):
     assert result == app_config.storage.abfs
 
 
+def test_get_storage_opts_gcs(app_config):
+    """Test getting storage options for GCS protocol."""
+    # Setup & Execute
+    result = get_storage_opts("gcs://bucket/path/to/file.pdf", app_config)
+
+    # Assert
+    assert result is not None
+    assert result == app_config.storage.gcs
+
+
+def test_get_storage_opts_sftp(app_config):
+    """Test getting storage options for SFTP protocol."""
+    # Setup & Execute
+    result = get_storage_opts("sftp://server/path/to/file.pdf", app_config)
+
+    # Assert
+    assert result is not None
+    assert result == app_config.storage.sftp
+
+
+def test_get_storage_opts_smb(app_config):
+    """Test getting storage options for SMB protocol."""
+    # Setup & Execute
+    result = get_storage_opts("smb://server/path/to/file.pdf", app_config)
+
+    # Assert
+    assert result is not None
+    assert result == app_config.storage.smb
+
+
 def test_get_storage_opts_unsupported(app_config):
     """Test getting storage options for unsupported protocol."""
     # Setup & Execute & Assert
@@ -147,6 +177,22 @@ def test_get_file_age():
 
     age_creation_time = get_file_age(file_info_creation_time)
     assert 3500 <= age_creation_time <= 3700
+
+
+def test_get_file_age_with_naive_datetime():
+    """Test getting file age with naive datetime."""
+    # Setup
+    import datetime as dt
+
+    # Create a datetime without timezone info
+    naive_datetime = dt.datetime.now() - dt.timedelta(hours=1)
+    file_info_naive = {"creation_time": naive_datetime}
+
+    # Execute
+    age_naive = get_file_age(file_info_naive)
+
+    # Assert - We're just testing that it doesn't crash and returns a reasonable value
+    assert age_naive > 0  # At least some time has passed
 
 
 @patch("common.redis_client", None)
