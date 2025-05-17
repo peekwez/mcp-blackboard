@@ -7,11 +7,11 @@ from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
-    abfs: dict[str, str] | None = None
-    s3: dict[str, str] | None = None
-    gcs: dict[str, str] | None = None
-    sftp: dict[str, str] | None = None
-    smb: dict[str, str] | None = None
+    abfs: dict[str, str | bool | int | None] | None = None
+    s3: dict[str, str | bool | int | None] | None = None
+    gcs: dict[str, str | bool | int | None] | None = None
+    sftp: dict[str, str | bool | int | None] | None = None
+    smb: dict[str, str | bool | int | None] | None = None
 
 
 class ConverterConfig(BaseModel):

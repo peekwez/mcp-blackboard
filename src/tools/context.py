@@ -81,7 +81,7 @@ def write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
     hash_key = get_cache_key(url)
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
-    fs.mkdir(cache_path, create_parents=True, exist_ok=True)
+    fs.mkdirs(cache_path, exist_ok=True)
     cache_file = f"{cache_path}/{hash_key}.md"
     with fs.open(cache_file, "w") as f:
         f.write(contents)

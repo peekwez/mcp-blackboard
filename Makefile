@@ -35,7 +35,7 @@ link-data:
 	ls -l /tmp/genai/data/bb-samples/
 
 run:
-	docker run -it --rm -d \
+	docker run -it --rm \
 		--env-file .env \
 		-p 8000:8000 \
 		-v /tmp/genai/data:/app/data \
