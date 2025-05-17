@@ -153,7 +153,7 @@ def validate_key(key: str) -> tuple[str, str, str, str]:
 
     if parts[0] == "result" and len(parts) != 4:
         raise ValueError(
-            "Result key must be in the format 'result|<plan_id>|<aget_name>|<step id>'"
+            "Result key must be in the format 'result|<plan_id>|<agent_name>|<step id>'"
         )
 
     try:
