@@ -169,7 +169,13 @@ async def save_result(
         ValueError: If the result is not in the correct format.
     """
     step_id = check_step_id(step_id)
-    return write_result(plan_id, agent_name, step_id, description, result)
+    return write_result(
+        plan_id,
+        str(agent_name),
+        step_id,
+        description,
+        result,
+    )
 
 
 @mcp.tool()
@@ -228,14 +234,14 @@ async def get_result(
 
     Args:
         plan_id (str): The ID of the plan.
-        agent_name (str): The name of the agent.
+        agent_name (AgentName): The name of the agent.
         step_id (int): The ID of the step.
 
     Returns:
         str | dict | None: The result associated with the ID, or None if not found.
     """
     step_id = check_step_id(step_id)
-    return fetch_result(plan_id, agent_name, step_id)
+    return fetch_result(plan_id, str(agent_name), step_id)
 
 
 @mcp.tool()

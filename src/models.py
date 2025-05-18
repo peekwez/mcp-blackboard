@@ -28,6 +28,9 @@ class AgentName(str, Enum):
                     return member
         return None
 
+    def __str__(self):
+        return self.value
+
 
 class StorageConfig(BaseModel):
     abfs: dict[str, str | bool | int | None] | None = None
