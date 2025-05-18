@@ -1,9 +1,32 @@
 # type: ignore
+from enum import Enum
 from typing import Literal
 
 from openai import OpenAI
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
+
+
+class AgentName(str, Enum):
+    RESEARCHER = "researcher"
+    EXTRACTOR = "extractor"
+    ANALYZER = "analyzer"
+    WRITER = "writer"
+    EDITOR = "editor"
+    EVALUATOR = "evaluator"
+    PLANNER = "planner"
+    CONTEXT_BUILDER = "context builder"
+    VALIDATOR = "validator"
+    SUMMARIZER = "summarizer"
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value == value_lower:
+                    return member
+        return None
 
 
 class StorageConfig(BaseModel):
@@ -54,3 +77,27 @@ class ConverterParams(BaseModel):
     llm_client: OpenAI | None = None
     llm_model: str | None = None
     docintel_endpoint: str | None = None
+
+
+class PlanStep(BaseModel):
+    id: int = Field(..., description="Unique identifier for the step.")
+    agent: AgentName = Field(
+        ..., description="The agent responsible for executing the step."
+    )
+    prompt: str = Field(..., description="The prompt to be sent to the agent.")
+    revision: int = Field(..., description="The revision number of the step.")
+    status: Literal["pending", "completed"] = Field(
+        ..., description="The status of the step."
+    )
+    depends_on: list[int] = Field(
+        ..., description="A list of step IDs that this step depends on."
+    )
+
+
+class Plan(BaseModel):
+    id: str = Field(..., description="Unique identifier for the plan.")
+    goal: str = Field(..., description="The goal of the plan.")
+    steps: list[PlanStep] = Field(
+        ...,
+        description="A collection of steps to be executed by different agents.",
+    )

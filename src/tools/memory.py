@@ -54,20 +54,20 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
     return "ok"
 
 
-def update_plan_status(plan_id: str, step_id: str, status: str = "completed") -> str:
+def update_plan_status(plan_id: str, step_id: int, status: str = "completed") -> str:
     """
     Mark a plan step as done in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark as done.
-        step_id (str): The ID of the step to mark as done.
+        step_id (int): The ID of the step to mark as done.
         status (str): The status to set for the step. Defaults to "completed".
 
     Returns:
         str: A confirmation message.
     """
     client = get_redis_client(get_app_config())
-    path = f".steps.[{int(step_id) - 1}].status"
+    path = f".steps.[{step_id - 1}].status"
     client.json().set(plan_id, path, status)
     return "ok"
 
@@ -96,7 +96,7 @@ def write_context_description(
 
 
 def write_result(
-    plan_id: str, agent_name: str, step_id: str, description: str, result: dict | str
+    plan_id: str, agent_name: str, step_id: int, description: str, result: dict | str
 ) -> str:
     """
     Save a result to the shared state
@@ -104,7 +104,7 @@ def write_result(
     Args:
         plan_id (str): The ID of the plan.
         agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        step_id (int): The ID of the step.
         description (str): A description of the result being saved.
         result (dict|str): The result to save. It should be a JSON-serializable object.
 
@@ -159,14 +159,14 @@ def fetch_blackboard(plan_id: str) -> str | dict | None:
     return json.dumps(client.hgetall(_b_key))
 
 
-def fetch_result(plan_id: str, agent_name: str, step_id: str) -> str | dict | None:
+def fetch_result(plan_id: str, agent_name: str, step_id: int) -> str | dict | None:
     """
     Fetch a result from the shared state
 
     Args:
         plan_id (str): The ID of the plan.
         agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        step_id (int): The ID of the step.
 
     Returns:
         str | dict | None: The result associated with the plan, agent, and step,

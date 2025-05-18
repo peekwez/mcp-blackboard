@@ -6,6 +6,7 @@ from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
 
 from common import get_app_config
+from models import AgentName, Plan
 from tools.context import fetch_context, get_file_age, get_filesystem
 from tools.memory import (
     fetch_blackboard,
@@ -76,6 +77,21 @@ mcp = FastMCP(
 )
 
 
+def check_step_id(step_id: int) -> None:
+    """
+    Check if the step ID is valid.
+
+    Args:
+        step_id (int): The ID of the step to check.
+
+    Raises:
+        ValueError: If the step ID is not a positive integer.
+    """
+    if not isinstance(step_id, int) or step_id < 0:
+        raise ValueError("step_id must be a positive integer.")
+    return step_id
+
+
 @mcp.tool()
 async def save_plan(plan_id: str, plan: dict | str) -> str:
     """
@@ -91,35 +107,58 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
     Raises:
         ValueError: If the plan is not in the correct format.
     """
-    return write_plan(plan_id, plan)
+    if isinstance(plan, str):
+        try:
+            parsed = Plan.parse_raw(plan)
+        except ValueError as e:
+            raise ValueError(
+                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
+            ) from e
+    elif isinstance(plan, dict):
+        try:
+            parsed = Plan(**plan)
+        except ValueError as e:
+            raise ValueError(
+                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
+            ) from e
+    else:
+        raise ValueError(
+            "Plan must be a JSON-serializable object or a valid JSON string."
+        )
+    return write_plan(plan_id, parsed.model_dump())
 
 
 @mcp.tool()
-async def mark_plan_as_completed(plan_id: str, step_id: str) -> str:
+async def mark_plan_as_completed(plan_id: str, step_id: int) -> str:
     """
     Mark a plan as completed in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark as completed.
-        step_id (str): The ID of the step to mark as completed.
+        step_id (int): The ID of the step to mark as completed.
 
     Returns:
         str: A confirmation message indicating that the plan has been marked as done.
     """
+    step_id = check_step_id(step_id)
     return update_plan_status(plan_id, step_id)
 
 
 @mcp.tool()
 async def save_result(
-    plan_id: str, agent_name: str, step_id: str, description: str, result: str | dict
+    plan_id: str,
+    agent_name: AgentName,
+    step_id: int,
+    description: str,
+    result: str | dict,
 ) -> str:
     """
     Save a result to the shared state
 
     Args:
         plan_id (str): The ID of the plan.
-        agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        agent_name (AgentName): The name of the agent.
+        step_id (int): The ID of the step.
         description (str): A description of the result being saved.
         result (str | dict): The result to save. It must be JSON-serializable.
 
@@ -129,6 +168,7 @@ async def save_result(
     Raises:
         ValueError: If the result is not in the correct format.
     """
+    step_id = check_step_id(step_id)
     return write_result(plan_id, agent_name, step_id, description, result)
 
 
@@ -180,18 +220,21 @@ async def get_plan(plan_id: str) -> str | dict | None:
 
 
 @mcp.tool()
-async def get_result(plan_id: str, agent_name: str, step_id: str) -> str | dict | None:
+async def get_result(
+    plan_id: str, agent_name: AgentName, step_id: int
+) -> str | dict | None:
     """
     Fetch a result from the shared state
 
     Args:
         plan_id (str): The ID of the plan.
         agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        step_id (int): The ID of the step.
 
     Returns:
         str | dict | None: The result associated with the ID, or None if not found.
     """
+    step_id = check_step_id(step_id)
     return fetch_result(plan_id, agent_name, step_id)
 
 
