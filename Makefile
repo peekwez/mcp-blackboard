@@ -33,9 +33,8 @@ link-path:
 	mkdir -p /tmp/genai/cache || true
 
 link-data: link-path
-	unlink /tmp/genai/data/bb-samples || true
-	ln -s $(shell pwd)/samples /tmp/genai/data/bb-samples
-	ls -l /tmp/genai/data/bb-samples/
+	cp -r $(shell pwd)/samples /tmp/genai/data/samples
+	ls -l /tmp/genai/data/
 
 debug: link-data
 	uv run src/main.py
