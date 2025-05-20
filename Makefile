@@ -33,6 +33,7 @@ link-path:
 	mkdir -p /tmp/genai/cache || true
 
 link-data: link-path
+	rm -fr /tmp/genai/data/samples || true
 	cp -r $(shell pwd)/samples /tmp/genai/data/samples
 	ls -l /tmp/genai/data/
 
