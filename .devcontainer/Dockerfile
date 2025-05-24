@@ -15,14 +15,4 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# ARG CUSTOM_SSL_CERTS=/usr/local/share/ca-certificates/cacert.pem
-# COPY certs/cacert.pem $CUSTOM_SSL_CERTS
-# RUN chmod 644 $CUSTOM_SSL_CERTS
-# RUN update-ca-certificates
-
-# ENV SSL_CERT_FILE=$CUSTOM_SSL_CERTS
-# ENV REQUESTS_CA_BUNDLE=$CUSTOM_SSL_CERTS
-# ENV NODE_EXTRA_CA_CERTS=$CUSTOM_SSL_CERTS
-# ENV GIT_SSL_CAINFO=$CUSTOM_SSL_CERTS
-
 COPY --from=uv --chown=vscode: /uv /uvx /bin/

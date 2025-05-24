@@ -2,8 +2,7 @@ from typing import Any, Literal
 
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field
-
-# from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
@@ -40,7 +39,7 @@ class RedisConfig(BaseModel):
     decode_responses: bool = True
 
 
-class AppConfig(BaseModel):
+class AppConfig(BaseSettings):
     cache_path: str
     mcp_transport: Literal["stdio", "sse"]
     redis: RedisConfig
@@ -75,7 +74,7 @@ class PlanStep(BaseModel):
         "pending", description="Current status of the step"
     )
     depends_on: list[int] = Field(
-        ..., description="List of step IDs that this step depends on"
+        default=[], description="List of step IDs that this step depends on"
     )
 
 
