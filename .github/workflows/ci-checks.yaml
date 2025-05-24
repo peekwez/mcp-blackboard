@@ -35,7 +35,7 @@ jobs:
             ${{ runner.os }}-uv-${{ matrix.python-version }}-
 
       - name: Install dependencies
-        run: make install
+        run: make sync
 
       - name: Format and lint
         run: make format
