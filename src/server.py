@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
+from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
 
 from common import get_app_config
+from models import Plan
 from tools.context import fetch_context, get_file_age, get_filesystem
 from tools.memory import (
     fetch_blackboard,
@@ -35,22 +37,22 @@ def remove_stale_files(max_age: int = 3600) -> None:
     fs = get_filesystem(app_config.cache_path, app_config)
 
     # remove all files older than 1 day
-    for file_info in fs.listdir(cache_path):
-        file_age = get_file_age(file_info)
+    for file_info in fs.listdir(cache_path):  # type: ignore[return-value]
+        file_age = get_file_age(file_info)  # type: ignore[return-value]
         if file_age > max_age:
-            fs.rm(f"{file_info['name']}")
+            fs.rm(f"{file_info['name']}")  # type: ignore[call-arg]
 
 
 scheduler = BackgroundScheduler()
 trigger = CronTrigger(minute=0)  # every hour at the start of the hour
-scheduler.add_job(remove_stale_files, trigger)
-scheduler.start()
+scheduler.add_job(remove_stale_files, trigger)  # type: ignore[call-arg]
+scheduler.start()  # type: ignore[call-arg]
 
 
 @asynccontextmanager
 async def lifespan(mcp: FastMCP):
     yield
-    scheduler.shutdown()
+    scheduler.shutdown()  # type: ignore[call-arg]
 
 
 mcp = FastMCP(
@@ -60,23 +62,11 @@ mcp = FastMCP(
         "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
-    dependencies=[
-        "apscheduler",
-        "dotenv",
-        "fsspec",
-        "jinja2",
-        "markitdown",
-        "openai",
-        "pydantic",
-        "pydantic-settings",
-        "pyyaml",
-        "tenacity",
-    ],
 )
 
 
 @mcp.tool()
-async def save_plan(plan_id: str, plan: dict | str) -> str:
+async def save_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
     """
     Save a plan to the shared state
 
@@ -90,17 +80,37 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
     Raises:
         ValueError: If the plan is not in the correct format.
     """
-    return write_plan(plan_id, plan)
+    if isinstance(plan, str):
+        try:
+            parsed = Plan.model_validate_json(plan)
+        except ValueError as e:
+            raise ValueError(
+                "Plan must be a JSON-serializable object or a valid JSON string."
+            ) from e
+
+    elif isinstance(plan, dict):  # type: ignore[unreachable]
+        try:
+            parsed = Plan.model_validate(plan)
+        except ValueError as e:
+            raise ValueError(
+                "Plan must be a JSON-serializable object or a valid JSON string."
+            ) from e
+    else:
+        raise ValueError(
+            "Plan must be a JSON-serializable object or a valid JSON string."
+        )
+
+    return write_plan(plan_id, parsed.model_dump(mode="json"))
 
 
 @mcp.tool()
-async def mark_plan_as_completed(plan_id: str, step_id: str) -> str:
+async def mark_plan_as_completed(plan_id: str, step_id: int) -> str:
     """
     Mark a plan as completed in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark as completed.
-        step_id (str): The ID of the step to mark as completed.
+        step_id (int): The ID of the step to mark as completed.
 
     Returns:
         str: A confirmation message indicating that the plan has been marked as done.
@@ -110,7 +120,11 @@ async def mark_plan_as_completed(plan_id: str, step_id: str) -> str:
 
 @mcp.tool()
 async def save_result(
-    plan_id: str, agent_name: str, step_id: str, description: str, result: str | dict
+    plan_id: str,
+    agent_name: str,
+    step_id: int,
+    description: str,
+    result: str | dict[str, Any],
 ) -> str:
     """
     Save a result to the shared state
@@ -118,7 +132,7 @@ async def save_result(
     Args:
         plan_id (str): The ID of the plan.
         agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        step_id (int): The ID of the step.
         description (str): A description of the result being saved.
         result (str | dict): The result to save. It must be JSON-serializable.
 
@@ -150,7 +164,7 @@ async def save_context_description(
 
 
 @mcp.tool()
-async def get_blackboard(plan_id: str) -> str | dict | None:
+async def get_blackboard(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a blackboard entry for a plan from the shared state
 
@@ -165,7 +179,7 @@ async def get_blackboard(plan_id: str) -> str | dict | None:
 
 
 @mcp.tool()
-async def get_plan(plan_id: str) -> str | dict | None:
+async def get_plan(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a plan from the shared state
 
@@ -179,14 +193,16 @@ async def get_plan(plan_id: str) -> str | dict | None:
 
 
 @mcp.tool()
-async def get_result(plan_id: str, agent_name: str, step_id: str) -> str | dict | None:
+async def get_result(
+    plan_id: str, agent_name: str, step_id: int
+) -> str | dict[str, Any] | None:
     """
     Fetch a result from the shared state
 
     Args:
         plan_id (str): The ID of the plan.
         agent_name (str): The name of the agent.
-        step_id (str): The ID of the step.
+        step_id (int): The ID of the step.
 
     Returns:
         str | dict | None: The result associated with the ID, or None if not found.

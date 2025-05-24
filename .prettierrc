@@ -3,6 +3,7 @@
     "overrides": [
         { "files": "*.json", "options": { "tabWidth": 2 } },
         { "files": "*.yml", "options": { "tabWidth": 2 } },
+        { "files": "*.yaml", "options": { "tabWidth": 2 } },
         { "files": "*.md", "options": { "tabWidth": 2 } }
     ]
 }

@@ -1,4 +1,4 @@
-.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean
+.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean infra
 
 all: down build clean up check
 
@@ -53,3 +53,9 @@ inspect:
 clean:
 	docker system prune -f
 	docker container prune -f
+
+infra:
+	pulumi up --cwd infra/azure --yes
+
+destroy:
+	pulumi destroy --cwd infra/azure --yes

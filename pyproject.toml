@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.9.1",
     "pyyaml>=6.0.2",
     "redis>=5.2.1",
+    "rich>=14.0.0",
     "tenacity>=9.1.2",
 ]
 
@@ -28,8 +29,11 @@ dev = [
     "mypy>=1.15.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
-    "rich>=14.0.0",
     "ruff>=0.11.7",
+]
+infra = [
+    "pulumi>=3.167.0",
+    "pulumi-azure-native>=3.3.0",
 ]
 
 
@@ -55,10 +59,11 @@ strict = true
 disallow_incomplete_defs = false
 disallow_untyped_defs = false
 disallow_untyped_calls = false
+mypy_path = "src"
+plugins = [
+    "pydantic.mypy"
+]
 
-# [[tool.mypy.overrides]]
-# module = "sounddevice.*"
-# ignore_missing_imports = true
 
 [tool.coverage.run]
 source = ["tests", "src"]

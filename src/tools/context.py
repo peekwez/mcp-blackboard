@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import io
 
-import fsspec
+import fsspec  # type: ignore
 import markitdown
 from tenacity import (
     retry,
@@ -11,11 +11,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from common import (
-    get_app_config,
-    get_converter_opts,
-    get_storage_opts,
-)
+from common import get_app_config, get_converter_opts, get_storage_opts
 from models import AppConfig
 
 
@@ -32,8 +28,8 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
     """
     protocol, _ = url.split("://")
     storage_options = get_storage_opts(url, app_config)
-    fs = fsspec.filesystem(protocol, **storage_options)
-    return fs
+    fs = fsspec.filesystem(protocol, **storage_options)  # type: ignore[call-arg]
+    return fs  # type: ignore[return-value]
 
 
 def get_file_age(file_info: dict[str, str | int | float]) -> int:
@@ -47,13 +43,22 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
         datetime.timedelta: The age of the file.
     """
     if ctime := file_info.get("ctime"):
-        created_at = datetime.datetime.fromtimestamp(ctime)
+        if isinstance(ctime, str):
+            try:
+                ctime = float(ctime)
+            except ValueError:
+                # If ctime is a string that cannot be converted to float, return 0
+                return 0
+
+        created_at = datetime.datetime.fromtimestamp(ctime, tz=datetime.UTC)
     else:
         created_at = file_info.get("creation_time")
+        if created_at and not getattr(created_at, "tzinfo", None):
+            created_at = created_at.replace(tzinfo=datetime.UTC)  # type: ignore[assignment]
 
     current_time = datetime.datetime.now(datetime.UTC)
-    delta = current_time - created_at
-    return int(delta.total_seconds())
+    delta = current_time - created_at  # type: ignore[assignment]
+    return int(delta.total_seconds())  # type: ignore[return-value]
 
 
 def get_cache_key(url: str) -> str:
@@ -84,10 +89,10 @@ def write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
     hash_key = get_cache_key(url)
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
-    fs.mkdir(cache_path, create_parents=True, exist_ok=True)
+    fs.mkdir(cache_path, create_parents=True, exist_ok=True)  # type: ignore[call-arg]
     cache_file = f"{cache_path}/{hash_key}.md"
-    with fs.open(cache_file, "w") as f:
-        f.write(contents)
+    with fs.open(cache_file, "w") as f:  # type: ignore[call-arg]
+        f.write(contents)  # type: ignore[call-arg]
 
 
 def _load_cache_file(url: str, app_config: AppConfig) -> str:
@@ -105,11 +110,11 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
     cache_file = f"{cache_path}/{hash_key}.md"
-    if not fs.exists(cache_file):
+    if not fs.exists(cache_file):  # type: ignore[call-arg]
         raise OSError(f"Cache file {cache_file} does not exist")
 
-    with fs.open(cache_file, "r") as f:
-        return f.read()
+    with fs.open(cache_file, "r") as f:  # type: ignore[call-arg]
+        return f.read()  # type: ignore[call-arg]
 
 
 @retry(
@@ -146,9 +151,9 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
             pass
 
     try:
-        fs = get_filesystem(file_path_or_url, app_config)
-        with fs.open(file_path_or_url, "rb") as f:
-            buffer = io.BytesIO(f.read())
+        fs = get_filesystem(file_path_or_url, app_config)  # type: ignore[call-arg]
+        with fs.open(file_path_or_url, "rb") as f:  # type: ignore[call-arg]
+            buffer = io.BytesIO(f.read())  # type: ignore[call-arg]
     except Exception as e:
         raise OSError(f"Failed to load file from {file_path_or_url}: {e}") from None
 

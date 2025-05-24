@@ -1,14 +1,16 @@
+from typing import Any, Literal
+
 from openai import OpenAI
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 
 class StorageConfig(BaseModel):
-    abfs: dict | None = None
-    s3: dict | None = None
-    gcs: dict | None = None
-    sftp: dict | None = None
-    smb: dict | None = None
+    abfs: dict[str, Any] | None = None
+    s3: dict[str, Any] | None = None
+    gcs: dict[str, Any] | None = None
+    sftp: dict[str, Any] | None = None
+    smb: dict[str, Any] | None = None
 
 
 class ConverterConfig(BaseModel):
@@ -39,7 +41,7 @@ class RedisConfig(BaseModel):
 
 class AppConfig(BaseSettings):
     cache_path: str
-    mcp_transport: str
+    mcp_transport: Literal["stdio", "sse"]
     redis: RedisConfig
     storage: StorageConfig
     converter: ConverterConfig
@@ -52,3 +54,31 @@ class ConverterParams(BaseModel):
     llm_client: OpenAI | None = None
     llm_model: str = "gpt-4o"
     docintel_endpoint: str | None = None
+
+
+class PlanStep(BaseModel):
+    id: int = Field(..., description="Unique identifier for the step")
+    agent: Literal[
+        "researcher",
+        "extractor",
+        "analyzer",
+        "writer",
+        "editor",
+        "evaluator",
+    ] = Field(..., description="The agent responsible for this step")
+    prompt: str = Field(..., description="The prompt or task description for the agent")
+    revision: int = Field(
+        0, description="Revision number for the step, incremented with each update"
+    )
+    status: Literal["pending", "completed", "failed"] = Field(
+        "pending", description="Current status of the step"
+    )
+    depends_on: list[int] = Field(
+        default_factory=list, description="List of step IDs that this step depends on"
+    )
+
+
+class Plan(BaseModel):
+    id: int = Field(..., description="Unique identifier for the plan")
+    goal: str = Field(..., description="The main goal or objective of the plan")
+    steps: list[PlanStep] = Field(..., description="List of steps in the plan")

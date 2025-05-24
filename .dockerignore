@@ -10,3 +10,4 @@ __pycache__
 .git
 Makefile
 README.md
+.venv
