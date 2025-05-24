@@ -52,7 +52,7 @@ def write_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
             raise ValueError("Plan must be a JSON-serializable object") from None
 
     client = get_redis_client(get_app_config())
-    client.json().set(plan_id, "$", plan)
+    client.json().set(plan_id, "$", plan)  # type: ignore
     client.expire(plan_id, 3600)
     return "ok"
 
@@ -71,7 +71,7 @@ def update_plan_status(plan_id: str, step_id: int, status: str = "completed") ->
     """
     client = get_redis_client(get_app_config())
     path = f".steps.[{step_id - 1}].status"
-    client.json().set(plan_id, path, status)
+    client.json().set(plan_id, path, status)  # type: ignore
     return "ok"
 
 
