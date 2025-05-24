@@ -3,7 +3,7 @@
 all: down build clean up check
 
 sync:
-	uv sync --all-extras --all-packages --group dev
+	uv sync --all-extras --all-packages --group dev --group infra
 
 format:
 	uv run ruff format

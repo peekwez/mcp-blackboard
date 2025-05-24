@@ -1,0 +1,21 @@
+name: mcpbb
+description: A minimal Azure Native Python Pulumi program for deploying resources for MCP Blackboard.
+runtime:
+  name: python
+  options:
+    toolchain: uv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: azure-python
+
+  pulumi:autonaming:
+    value:
+      providers:
+        azure-native:
+          pattern: ${project}-${stack}-${name}${alphanum(6)}
+          resources:
+            "azure-native:storage:StorageAccount":
+              pattern: ${project}${stack}${name}${hex(6)}
+            "azure-native:storage:Table":
+              pattern: ${project}${stack}${name}${hex(6)}

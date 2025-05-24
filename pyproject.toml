@@ -21,6 +21,7 @@ dependencies = [
     "redis>=5.2.1",
     "rich>=14.0.0",
     "tenacity>=9.1.2",
+    "types-pyyaml>=6.0.12.20250516",
 ]
 
 [dependency-groups]
@@ -29,6 +30,7 @@ dev = [
     "mypy>=1.15.0",
     "pre-commit>=4.2.0",
     "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
     "pytest-cov>=6.1.1",
     "ruff>=0.11.7",
 ]
@@ -57,17 +59,34 @@ convention = "google"
 
 [tool.mypy]
 strict = true
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
-disallow_untyped_calls = false
+follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_ignores = false
+disallow_any_generics = true
+no_implicit_reexport = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+explicit_package_bases = true
+disallow_untyped_decorators = false
 mypy_path = "src"
 plugins = [
-    "pydantic.mypy"
+  "pydantic.mypy"
 ]
 
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.coverage.run]
-source = ["tests", "src"]
+source = ["src"]
+omit = [
+    "*/__init__.py",
+    "src/*/__init__.py",
+    "src/**/__init__.py",
+]
+
 
 [tool.coverage.report]
 show_missing = true
@@ -87,10 +106,13 @@ addopts = [
     "--disable-warnings",
     "--maxfail=1",
 ]
-env_file = ".env"
 testpaths = [
-    "tests",
+    "tests"
 ]
+pythonpath = [
+    "src"
+]
+
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 filterwarnings = [

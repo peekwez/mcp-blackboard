@@ -42,11 +42,14 @@ def write_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
     Raises:
         ValueError: If the plan is not in the correct format.
     """
-    if not (isinstance(plan, dict) and not isinstance(plan, str)):
+    if not isinstance(plan, dict | str):  # type: ignore
         raise ValueError("Plan must be a JSON-serializable object")
 
     if isinstance(plan, str):
-        plan = json.loads(plan)
+        try:
+            plan = json.loads(plan)
+        except json.JSONDecodeError:
+            raise ValueError("Plan must be a JSON-serializable object") from None
 
     client = get_redis_client(get_app_config())
     client.json().set(plan_id, "$", plan)
@@ -119,10 +122,16 @@ def write_result(
         ValueError: If the result is not in the correct format.
     """
 
-    if not (isinstance(result, dict) and not isinstance(result, str)):
+    if not isinstance(result, dict | str):  # type: ignore
         raise ValueError("Result must be a JSON-serializable object")
 
-    data = json.loads(result) if isinstance(result, dict) else result  # type: ignore
+    if isinstance(result, str):
+        try:
+            data = json.loads(result)
+        except json.JSONDecodeError:
+            raise ValueError("Result must be a JSON-serializable object") from None
+    else:
+        data = json.dumps(result)
     client = get_redis_client(get_app_config())
     _b_key = f"blackboard|{plan_id}".lower()
     _v_key = f"result|{plan_id}|{step_id}|{agent_name}".lower()

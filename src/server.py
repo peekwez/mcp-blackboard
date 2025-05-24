@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import Any
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
+from apscheduler.schedulers.background import (
+    BackgroundScheduler,  # type: ignore[import-untyped]
+)
+from apscheduler.triggers.cron import CronTrigger  # type: ignore[import-untyped]
 from mcp.server.fastmcp import FastMCP
 
 from common import get_app_config
@@ -50,7 +52,7 @@ scheduler.start()  # type: ignore[call-arg]
 
 
 @asynccontextmanager
-async def lifespan(mcp: FastMCP):
+async def lifespan(mcp: FastMCP):  # type: ignore[no-untyped-def]
     yield
     scheduler.shutdown()  # type: ignore[call-arg]
 
@@ -244,5 +246,7 @@ async def get_context(file_path_or_url: str, use_cache: bool = True) -> str:
         OSError: If there is an I/O error while loading the file.
         ValueError: If the URL is not valid or the conversion fails.
     """
-
-    return fetch_context(file_path_or_url, use_cache)
+    contents: str | None = fetch_context(file_path_or_url, use_cache)
+    if contents is None:
+        raise ValueError(f"Could not fetch context from {file_path_or_url}")
+    return contents

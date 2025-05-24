@@ -52,7 +52,7 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
 
         created_at = datetime.datetime.fromtimestamp(ctime, tz=datetime.UTC)
     else:
-        created_at = file_info.get("creation_time")
+        created_at = file_info.get("creation_time")  # type: ignore[assignment]
         if created_at and not getattr(created_at, "tzinfo", None):
             created_at = created_at.replace(tzinfo=datetime.UTC)  # type: ignore[assignment]
 
@@ -95,7 +95,7 @@ def write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
         f.write(contents)  # type: ignore[call-arg]
 
 
-def _load_cache_file(url: str, app_config: AppConfig) -> str:
+def load_cache_file(url: str, app_config: AppConfig) -> str:
     """
     Load the contents of a cache file.
 
@@ -109,12 +109,21 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
     hash_key = get_cache_key(url)
     _, cache_path = app_config.cache_path.split("://")
     fs = get_filesystem(app_config.cache_path, app_config)
+
     cache_file = f"{cache_path}/{hash_key}.md"
     if not fs.exists(cache_file):  # type: ignore[call-arg]
         raise OSError(f"Cache file {cache_file} does not exist")
 
+    if not fs.isfile(cache_file):  # type: ignore[call-arg]
+        raise OSError(f"Cache file {cache_file} is not a file")
+
     with fs.open(cache_file, "r") as f:  # type: ignore[call-arg]
-        return f.read()  # type: ignore[call-arg]
+        content = f.read()
+        if not content:
+            raise ValueError(f"Cache file {cache_file} is empty")
+        if not isinstance(content, str):
+            raise ValueError(f"Cache file {cache_file} is not a string")
+        return content
 
 
 @retry(
@@ -146,7 +155,7 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
     # if a cache file exists, load it
     if use_cache:
         try:
-            return _load_cache_file(file_path_or_url, app_config)
+            return load_cache_file(file_path_or_url, app_config)
         except OSError:
             pass
 
@@ -163,4 +172,13 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
     # save a copy of the file to the cache for future use
     if use_cache:
         write_cache_file(file_path_or_url, document.markdown, app_config)
+
+    if not document.markdown:
+        raise ValueError(f"Failed to convert file {file_path_or_url} to Markdown")
+
+    if not isinstance(document.markdown, str):
+        raise ValueError(
+            f"Converted content is not a string: {type(document.markdown)}"
+        )
+
     return document.markdown

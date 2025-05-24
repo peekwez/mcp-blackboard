@@ -34,7 +34,10 @@
     ".venv",
     "addopts",
     "cainfo",
+    "nbstripout",
+    "setuptools",
     "pyupgrade",
+    "pythonpath",
     "visualstudioexptteam",
     "vscodeintellicode",
     "PYTHONUNBUFFERED",
@@ -47,6 +50,7 @@
     "extensionfilepath",
     "devextensionfilepath",
     "chatextensionfilepath",
+    "serverfarms",
     "Kwesi",
     "Apponsah"
   ]
