@@ -13,7 +13,7 @@ lint:
 	uv run ruff check
 
 mypy:
-	uv run mypy --config-file=pyproject.toml .
+	uv run mypy .
 
 tests:
 	uv run pytest
