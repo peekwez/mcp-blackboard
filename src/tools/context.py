@@ -176,7 +176,7 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
     if not document.markdown:
         raise ValueError(f"Failed to convert file {file_path_or_url} to Markdown")
 
-    if not isinstance(document.markdown, str):
+    if not isinstance(document.markdown, str):  # type: ignore[return-value]
         raise ValueError(
             f"Converted content is not a string: {type(document.markdown)}"
         )
