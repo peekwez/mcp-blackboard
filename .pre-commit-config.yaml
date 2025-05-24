@@ -35,7 +35,6 @@ repos:
       - id: mypy
         language: system
         args: ["--config-file=pyproject.toml"]
-        # additional_dependencies: [types-setuptools, "pydantic"]
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:
