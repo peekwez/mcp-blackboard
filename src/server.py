@@ -247,6 +247,6 @@ async def get_context(file_path_or_url: str, use_cache: bool = True) -> str:
         ValueError: If the URL is not valid or the conversion fails.
     """
     contents: str | None = fetch_context(file_path_or_url, use_cache)
-    if contents is None:
+    if contents is None:  # type: ignore[return-value]
         raise ValueError(f"Could not fetch context from {file_path_or_url}")
     return contents
