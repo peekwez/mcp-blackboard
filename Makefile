@@ -5,18 +5,18 @@ all: down build clean up check
 sync:
 	uv sync --all-extras --all-packages --group dev
 
-format: 
+format:
 	uv run ruff format
 	uv run ruff check --fix
 
-lint: 
+lint:
 	uv run ruff check
 
-mypy: 
+mypy:
 	uv run mypy .
 
-tests: 
-	uv run pytest 
+tests:
+	uv run pytest
 
 coverage:
 	uv run coverage run -m pytest
@@ -36,6 +36,10 @@ run:
 		-v ./samples:/app/samples \
 		--name mcp-blackboard \
 		mcp/blackboard
+
+hooks:
+	uv run pre-commit install
+	uv run pre-commit autoupdate
 
 up:
 	docker compose up -d
