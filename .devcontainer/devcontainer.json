@@ -1,19 +1,14 @@
 {
   "name": "mcp-blackboard-py313",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "runArgs": [
-      "--platform",
-      "linux/$([ \"$(uname -m)\" = \"arm64\" ] || [ \"$(uname -m)\" = \"aarch64\" ] && echo \"arm64\" || echo \"amd64\")"
-    ],
-    "args": {
-      "UV_VERSION": "latest",
-      "DEBIAN_VERSION": "bookworm",
-      "PYTHON_VERSION": "3.13"
-    }
-  },
+  "image": "mcr.microsoft.com/devcontainers/python:3.13-bookworm",
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli": {
+      "version": "latest"
+    },
+    "ghcr.io/jsburckhardt/devcontainer-features/uv": {
       "version": "latest"
     }
   },
@@ -55,6 +50,6 @@
     "UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv"
   },
   "forwardPorts": [8888],
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postCreateCommand": "bash -i .devcontainer/post-create.sh",
   "remoteUser": "vscode"
 }

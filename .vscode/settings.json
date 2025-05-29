@@ -28,5 +28,6 @@
   },
   "github.copilot.advanced": {
     "debug.useNodeFetcher": true
-  }
+  },
+  "python.analysis.extraPaths": ["./src"]
 }
