@@ -1,22 +1,22 @@
-.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean
+.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean infra
 
 all: down build clean up check
 
 sync:
-	uv sync --all-extras --all-packages --group dev
+	uv sync --all-extras --all-packages --group dev --group infra
 
-format: 
+format:
 	uv run ruff format
 	uv run ruff check --fix
 
-lint: 
+lint:
 	uv run ruff check
 
-mypy: 
+mypy:
 	uv run mypy .
 
-tests: 
-	uv run pytest 
+tests:
+	uv run pytest
 
 coverage:
 	uv run coverage run -m pytest
@@ -37,6 +37,10 @@ run:
 		--name mcp-blackboard \
 		mcp/blackboard
 
+hooks:
+	uv run pre-commit install
+	uv run pre-commit autoupdate
+
 up:
 	docker compose up -d
 
@@ -53,3 +57,9 @@ inspect:
 clean:
 	docker system prune -f
 	docker container prune -f
+
+infra:
+	pulumi up --cwd infra/azure --yes
+
+destroy:
+	pulumi destroy --cwd infra/azure --yes

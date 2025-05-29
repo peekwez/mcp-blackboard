@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
@@ -85,7 +84,7 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
     return params.model_dump()
 
 
-def get_storage_opts(url: str, app_config: AppConfig) -> dict:
+def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
     """
     Get the storage options based on the URL protocol.
 
@@ -116,7 +115,6 @@ def get_storage_opts(url: str, app_config: AppConfig) -> dict:
             f"file, s3, abfs, gcs, sftp, smb, http"
         )
         raise ValueError(message)
-
 
 
 def validate_key(key: str) -> tuple[str, str, str | None, str | None]:

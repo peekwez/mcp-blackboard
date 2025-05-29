@@ -3,7 +3,7 @@ from server import mcp
 
 
 class ContextBuilderMCPServer:
-    def run(self):
+    def run(self) -> None:
         app_config = get_app_config()
         mcp.run(transport=app_config.mcp_transport)
 
