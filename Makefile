@@ -6,6 +6,10 @@ push:
 	git push origin HEAD
 	git push --tags
 
+push-submodule:
+	git submodule foreach git push origin HEAD
+	git submodule foreach git push --tags
+	
 sync:
 	uv sync --all-extras --all-packages --group dev
 
