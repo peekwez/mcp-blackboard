@@ -23,7 +23,19 @@ def test_write_plan(mock_get_redis, mock_get_app_config, app_config, mock_redis)
     mock_get_app_config.return_value = app_config
     mock_get_redis.return_value = mock_redis
     mock_redis.json = MagicMock()
-    plan = {"id": "test-plan", "steps": [{"id": "step-1", "status": "pending"}]}
+    plan = {
+        "id": "test-plan",
+        "goal": "Test goal",
+        "steps": [
+            {
+                "id": 1,
+                "agent": "test-agent",
+                "prompt": "Test prompt",
+                "revision": 1,
+                "status": "pending",
+            }
+        ],
+    }
 
     # Execute
     result = write_plan("test-plan-1", plan)
@@ -42,7 +54,21 @@ def test_write_plan_string(mock_get_redis, mock_get_app_config, app_config, mock
     mock_get_app_config.return_value = app_config
     mock_get_redis.return_value = mock_redis
     mock_redis.json = MagicMock()
-    plan_str = '{"id": "test-plan", "steps": [{"id": "step-1", "status": "pending"}]}'
+    plan_str = """
+        {
+            "id": "test-plan",
+            "goal": "Test goal",
+            "steps": [
+                {
+                    "id": 1,
+                    "agent": "test-agent",
+                    "prompt": "Test prompt",
+                    "revision": 1,
+                    "status": "pending"
+                }
+            ]
+        }
+    """
     plan_dict = json.loads(plan_str)
 
     # Execute
@@ -73,7 +99,7 @@ def test_update_plan_status(
     mock_fetch_plan.return_value = sample_plan
 
     # Execute
-    result = update_plan_status("test-plan-1", "1", "completed")
+    result = update_plan_status("test-plan-1", 1, "completed")
 
     # Assert
     mock_redis.json().set.assert_called_once_with(
@@ -115,7 +141,7 @@ def test_write_result(mock_get_redis, mock_get_app_config, app_config, mock_redi
     result_data = {"key": "value"}
 
     # Execute
-    result = write_result("test-plan-1", "test-agent", "1", "Test result", result_data)
+    result = write_result("test-plan-1", "test-agent", 1, "Test result", result_data)
 
     # Assert
     _b_key = "blackboard|test-plan-1"
@@ -206,7 +232,7 @@ def test_fetch_result(mock_get_redis, mock_get_app_config, app_config, mock_redi
     mock_get_redis.return_value = mock_redis
     expected_result = {
         "agent": "test-agent",
-        "step": "1",
+        "step": 1,
         "description": "Test result",
         "result": {"key": "value"},
     }

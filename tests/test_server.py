@@ -63,11 +63,11 @@ async def test_get_result(mock_fetch_result):
     mock_fetch_result.return_value = {"agent": "test-agent", "result": "test result"}
 
     # Execute
-    result = await get_result("test-plan-1", "test-agent", "step-1")
+    result = await get_result("test-plan-1", "test-agent", 1)
 
     # Assert
     assert result == {"agent": "test-agent", "result": "test result"}
-    mock_fetch_result.assert_called_once_with("test-plan-1", "test-agent", "step-1")
+    mock_fetch_result.assert_called_once_with("test-plan-1", "test-agent", 1)
 
 
 @patch("server.fetch_context")
@@ -90,7 +90,28 @@ async def test_get_context(mock_fetch_context):
 async def test_save_plan(mock_write_plan):
     """Test saving a plan."""
     # Setup
-    plan = {"id": "test-plan-1", "steps": []}
+    plan = {
+        "id": "test-plan-1",
+        "goal": "Test goal",
+        "steps": [
+            {
+                "id": 1,
+                "agent": "researcher",
+                "prompt": "Do something",
+                "revision": 1,
+                "status": "completed",
+                "depends_on": [],
+            },
+            {
+                "id": 2,
+                "agent": "extractor",
+                "prompt": "Keep something",
+                "revision": 1,
+                "status": "pending",
+                "depends_on": [1],
+            },
+        ],
+    }
     mock_write_plan.return_value = "Plan saved successfully"
 
     # Execute
@@ -109,11 +130,11 @@ async def test_mark_plan_as_completed(mock_update_plan_status):
     mock_update_plan_status.return_value = "Plan step updated successfully"
 
     # Execute
-    result = await mark_plan_as_completed("test-plan-1", "step-1")
+    result = await mark_plan_as_completed("test-plan-1", 1)
 
     # Assert
     assert result == "Plan step updated successfully"
-    mock_update_plan_status.assert_called_once_with("test-plan-1", "step-1")
+    mock_update_plan_status.assert_called_once_with("test-plan-1", 1)
 
 
 @patch("server.write_result")
@@ -126,13 +147,13 @@ async def test_save_result(mock_write_result):
 
     # Execute
     result = await save_result(
-        "test-plan-1", "test-agent", "step-1", "Test description", result_data
+        "test-plan-1", "test-agent", 1, "Test description", result_data
     )
 
     # Assert
     assert result == "Result saved successfully"
     mock_write_result.assert_called_once_with(
-        "test-plan-1", "test-agent", "step-1", "Test description", result_data
+        "test-plan-1", "test-agent", 1, "Test description", result_data
     )
 
 
