@@ -1,4 +1,12 @@
 services:
+  mcp-inspector:
+    image: mcp/inspector
+    container_name: mcp-inspector
+    depends_on:
+      - mcp-blackboard
+    networks:
+      - mcp-network
+
   mcp-blackboard:
     image: mcp/blackboard
     container_name: mcp-blackboard
