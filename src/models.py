@@ -93,7 +93,7 @@ class PlanStep(BaseModel):
         ..., description="The status of the step."
     )
     depends_on: list[int] = Field(
-        ..., description="A list of step IDs that this step depends on."
+        default=[], description="A list of step IDs that this step depends on."
     )
 
 
