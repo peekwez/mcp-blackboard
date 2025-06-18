@@ -1,4 +1,12 @@
 services:
+  mcp-inspector:
+    image: mcp/inspector
+    container_name: mcp-inspector
+    depends_on:
+      - mcp-blackboard
+    networks:
+      - mcp-network
+
   mcp-blackboard:
     image: mcp/blackboard
     container_name: mcp-blackboard
@@ -6,10 +14,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /tmp/genai/data:/app/data
-      - /tmp/genai/cache:/app/cache
+      - shared-volume:/mnt/shared
     depends_on:
       - mem-blackboard
+      - vol-blackboard
     networks:
       - mcp-network
 
@@ -20,6 +28,22 @@ services:
       - "6380:6379"
     networks:
       - mcp-network
+
+  vol-blackboard:
+    image: busybox
+    container_name: vol-blackboard
+    command: sh -c "cp -r /mnt/shared/* /mnt/volume && tail -f /dev/null"
+    volumes:
+      - /private/tmp/genai/cache:/mnt/shared/cache
+      - /private/tmp/genai/data:/mnt/shared/data
+      - shared-volume:/mnt/volume
+    networks:
+      - mcp-network
+
+volumes:
+  shared-volume:
+    driver: local
+    external: false
 
 networks:
   mcp-network:
