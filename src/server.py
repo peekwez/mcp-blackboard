@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
+from pydantic import ValidationError
 
 from common import get_app_config
 from models import AgentName, Plan
@@ -77,7 +78,7 @@ mcp = FastMCP(
 )
 
 
-def check_step_id(step_id: int) -> None:
+def check_step_id(step_id: int) -> int:
     """
     Check if the step ID is valid.
 
@@ -110,17 +111,26 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
     if isinstance(plan, str):
         try:
             parsed = Plan.parse_raw(plan)
+        except ValidationError as e:
+            raise ValidationError(
+                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
+            ) from e
         except ValueError as e:
             raise ValueError(
-                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
+                f"The plan must be a valid JSON string. Error: {str(e)}"
             ) from e
     elif isinstance(plan, dict):
         try:
             parsed = Plan(**plan)
-        except ValueError as e:
-            raise ValueError(
+        except ValidationError as e:
+            raise ValidationError(
                 f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
             ) from e
+        except ValueError as e:
+            raise ValueError(
+                f"The plan must be a valid JSON string. Error: {str(e)}"
+            ) from e
+
     else:
         raise ValueError(
             "Plan must be a JSON-serializable object or a valid JSON string."
