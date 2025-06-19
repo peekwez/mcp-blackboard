@@ -1,5 +1,5 @@
 # type: ignore
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 from openai import OpenAI
@@ -7,7 +7,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 
-class AgentName(str, Enum):
+class StateUpdates(StrEnum):
+    write_plan = "write-plan"
+    update_status = "update-status"
+    describe_context = "describe-context"
+    write_result = "write-result"
+
+
+class AgentName(StrEnum):
     RESEARCHER = "researcher"
     EXTRACTOR = "extractor"
     ANALYZER = "analyzer"
@@ -104,3 +111,13 @@ class Plan(BaseModel):
         ...,
         description="A collection of steps to be executed by different agents.",
     )
+
+
+class ActionStream(BaseModel):
+    """
+    Represents a stream of state updates for a plan.
+    """
+
+    plan_id: str = Field(..., description="The ID of the plan.")
+    action: StateUpdates = Field(..., description="The action performed on the plan.")
+    data: dict = Field(..., description="The data associated with the action.")
