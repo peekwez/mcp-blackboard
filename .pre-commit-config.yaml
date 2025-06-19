@@ -33,7 +33,8 @@ repos:
     rev: v1.16.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-setuptools]
+        language: system
+        args: ["--config-file=pyproject.toml"]
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.1
     hooks:

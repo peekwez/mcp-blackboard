@@ -1,10 +1,11 @@
 import click
+
 from common import get_app_config
 from server import mcp
 
 
 @click.group()
-def cli():
+def cli() -> None:
     """Command line interface for managing the MCP Blackboard."""
     pass
 
@@ -28,7 +29,7 @@ def cli():
     default=8000,
     help="Port for the MCP Blackboard server.",
 )
-def up(env_file: str, host: str, port: int):
+def up(env_file: str, host: str, port: int) -> None:
     """
     Run the MCP Blackboard with the specified environment file.
 
