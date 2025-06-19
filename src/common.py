@@ -53,7 +53,7 @@ def get_app_config(env_file: str | None = None) -> AppConfig:
         AppConfig: The application configuration object.
     """
     global app_config
-    if not app_config:
+    if app_config is None:
         if not env_file:
             raise ValueError("If app_config is not set, env_file must be provided.")
         app_config = load_config(env_file)
