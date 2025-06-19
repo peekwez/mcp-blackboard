@@ -34,7 +34,7 @@ class AgentName(str, Enum):
 
 class StorageConfig(BaseModel):
     abfs: dict[str, str | bool | int | None] | None = None
-    s3: dict[str, str | bool | int | None] | None = None
+    s3: dict[str, str | bool | int | dict | None] | None = None
     gcs: dict[str, str | bool | int | None] | None = None
     sftp: dict[str, str | bool | int | None] | None = None
     smb: dict[str, str | bool | int | None] | None = None
