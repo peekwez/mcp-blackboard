@@ -30,6 +30,8 @@ storage:
     s3:
         key: {{ env.AWS_ACCESS_KEY_ID }}
         secret: {{ env.AWS_SECRET_ACCESS_KEY }}
+        client_kwargs:
+            endpoint_url: {{ env.AWS_ENDPOINT_URL | default('') }}
     gcs:
         token: {{ env.GOOGLE_APPLICATION_CREDENTIALS }}
     sftp:

@@ -29,5 +29,6 @@
   "github.copilot.advanced": {
     "debug.useNodeFetcher": true
   },
-  "python.analysis.extraPaths": ["./src"]
+  "python.analysis.extraPaths": ["./src"],
+  "python.defaultInterpreterPath": "./.venv/bin/python"
 }

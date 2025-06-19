@@ -1,10 +1,16 @@
-.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean
+ENV_FILE ?= .env
+
+.PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean up down check
 
 all: down build clean up check
 
 push:
 	git push origin HEAD
 	git push --tags
+
+push-subs:
+	git submodule foreach git push origin HEAD
+	git submodule foreach git push --tags
 
 sync:
 	uv sync --all-extras --all-packages --group dev
@@ -37,8 +43,9 @@ link-data: link-path
 	cp -r $(shell pwd)/samples /tmp/genai/data/samples
 	ls -l /tmp/genai/data/
 
-debug: link-data
-	uv run src/main.py
+debug:
+	cd src && uv run -m main up \
+		--env-file ${ENV_FILE}
 
 build:
 	docker build -t mcp/blackboard .
@@ -55,7 +62,7 @@ run: link-data
 down:
 	docker compose down
 
-up: down link-data
+up: down
 	docker compose up -d
 
 check:

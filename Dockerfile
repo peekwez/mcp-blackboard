@@ -18,9 +18,8 @@ RUN --mount=type=cache,target=/var/cache/pip \
     pip install --upgrade pip \
     && pip install .
 
-
 # Expose necessary port if any (MCP typically uses stdio, but if needed, uncomment below)
 EXPOSE 8000
 
 # Run the MCP Server
-CMD ["python", "src/main.py"]
+CMD ["python", "src/main.py", "up" , "--host", "0.0.0.0", "--port", "8000"]

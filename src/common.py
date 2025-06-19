@@ -42,16 +42,19 @@ def load_config(env_file: str) -> AppConfig:
     return AppConfig.model_validate(config_dict)
 
 
-def get_app_config() -> AppConfig:
+def get_app_config(env_file: str | None = None) -> AppConfig:
     """
     Get the application configuration.
+
+    Args:
+        env_file (str | None): The path to the .env file.
 
     Returns:
         AppConfig: The application configuration object.
     """
     global app_config
     if app_config is None:
-        app_config = load_config(".env")
+        app_config = load_config(env_file or ".env")
 
     return app_config
 
