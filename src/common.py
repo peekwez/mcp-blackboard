@@ -7,9 +7,10 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader
-from models import AppConfig, ConverterParams
 from openai import OpenAI
 from redis import Redis
+
+from models import AppConfig, ConverterParams
 
 TEMPLATES_DIR = Path(__file__).parent
 
@@ -41,19 +42,19 @@ def load_config(env_file: str) -> AppConfig:
     return AppConfig.model_validate(config_dict)
 
 
-def get_app_config(env_file: str = ".env") -> AppConfig:
+def get_app_config(env_file: str | None = None) -> AppConfig:
     """
     Get the application configuration.
 
     Args:
-        env_file (str): The path to the .env file. Defaults to ".env".
+        env_file (str | None): The path to the .env file.
 
     Returns:
         AppConfig: The application configuration object.
     """
     global app_config
     if app_config is None:
-        app_config = load_config(env_file)
+        app_config = load_config(env_file or ".env")
 
     return app_config
 

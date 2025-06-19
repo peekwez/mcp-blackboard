@@ -1,6 +1,6 @@
 # type: ignore
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field
@@ -34,7 +34,7 @@ class AgentName(str, Enum):
 
 class StorageConfig(BaseModel):
     abfs: dict[str, str | bool | int | None] | None = None
-    s3: dict[str, str | bool | int | dict | None] | None = None
+    s3: dict[str, str | bool | int | dict[str, Any] | None] | None = None
     gcs: dict[str, str | bool | int | None] | None = None
     sftp: dict[str, str | bool | int | None] | None = None
     smb: dict[str, str | bool | int | None] | None = None
