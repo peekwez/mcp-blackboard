@@ -39,8 +39,8 @@ def add_to_stream(stream: ActionStream) -> str:
         str: A confirmation message.
     """
     client = get_redis_client(get_app_config())
-    stream_key = f"task-updates|{stream.plan_id}"
-    client.xadd(stream_key, stream.model_dump(mode="json"), id="*")
+    stream_key = f"task-updates:{stream.plan_id}"
+    client.xadd(stream_key, stream.model_dump(mode="json"))
     return "ok"
 
 
@@ -68,7 +68,9 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
     client.json().set(plan_id, "$", plan)
     client.expire(plan_id, 3600)
 
-    stream = ActionStream(plan_id=plan_id, action=StateUpdates.write_plan, data=plan)
+    stream = ActionStream(
+        plan_id=plan_id, action=StateUpdates.write_plan, data=json.dumps(plan)
+    )
     add_to_stream(stream)
     return "ok"
 
@@ -89,7 +91,7 @@ def update_plan_status(plan_id: str, step_id: int, status: str = "completed") ->
     path = f".steps.[{step_id - 1}].status"
     client.json().set(plan_id, path, status)
 
-    data = {"step_id": step_id, "status": status}
+    data = json.dumps({"step_id": step_id, "status": status})
     stream = ActionStream(plan_id=plan_id, action=StateUpdates.update_status, data=data)
     add_to_stream(stream)
     return "ok"
@@ -116,10 +118,7 @@ def write_context_description(
     client.hset(_b_key, _v_key, description)
     client.expire(_b_key, 3600)
 
-    data = {
-        "context_url": file_path_or_url,
-        "description": description,
-    }
+    data = json.dumps({"context_url": file_path_or_url, "description": description})
     stream = ActionStream(
         plan_id=plan_id, action=StateUpdates.describe_context, data=data
     )
@@ -160,12 +159,14 @@ def write_result(
     client.set(_v_key, result)
     client.expire(_v_key, 3600)
 
-    data = {
-        "step_id": step_id,
-        "agent_name": agent_name,
-        "description": description,
-        "result": result,
-    }
+    data = json.dumps(
+        {
+            "step_id": step_id,
+            "agent_name": agent_name,
+            "description": description,
+            "result": result,
+        }
+    )
     stream = ActionStream(plan_id=plan_id, action=StateUpdates.write_result, data=data)
     add_to_stream(stream)
     return "ok"

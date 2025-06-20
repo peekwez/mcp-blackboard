@@ -8,10 +8,10 @@ from pydantic_settings import BaseSettings
 
 
 class StateUpdates(StrEnum):
-    write_plan = "write-plan"
-    update_status = "update-status"
-    describe_context = "describe-context"
-    write_result = "write-result"
+    write_plan = "save-plan"
+    update_status = "mark-plan-as-completed"
+    describe_context = "save-context-description"
+    write_result = "save-result"
 
 
 class AgentName(StrEnum):
@@ -120,4 +120,4 @@ class ActionStream(BaseModel):
 
     plan_id: str = Field(..., description="The ID of the plan.")
     action: StateUpdates = Field(..., description="The action performed on the plan.")
-    data: dict = Field(..., description="The data associated with the action.")
+    data: str = Field(..., description="The data associated with the action.")
