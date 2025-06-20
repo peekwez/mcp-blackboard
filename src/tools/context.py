@@ -46,8 +46,7 @@ def get_file_age(file_info: dict[str, str | int | float]) -> int:
     created_at = None
     if ctime := file_info.get("ctime"):
         created_at = datetime.datetime.fromtimestamp(ctime, tz=datetime.UTC)
-
-    if not created_at:
+    elif not created_at:
         created_at = file_info.get("creation_time")
         # If created_at doesn't have timezone info but is aware, add UTC
         if created_at and not getattr(created_at, "tzinfo", None):  # pragma: no cover

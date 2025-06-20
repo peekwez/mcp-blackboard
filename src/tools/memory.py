@@ -40,7 +40,13 @@ def add_to_stream(stream: ActionStream) -> str:
     """
     client = get_redis_client(get_app_config())
     stream_key = f"task-updates:{stream.plan_id}"
-    client.xadd(stream_key, stream.model_dump(mode="json"))
+    try:
+        client.xadd(stream_key, stream.model_dump(mode="json"))
+    except Exception as e:
+        import logging
+
+        logging.error(f"Failed to add to stream {stream_key}: {e}")
+        return f"error: {str(e)}"
     return "ok"
 
 
