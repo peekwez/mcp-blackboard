@@ -22,4 +22,4 @@ RUN --mount=type=cache,target=/var/cache/pip \
 EXPOSE 8000
 
 # Run the MCP Server
-CMD ["python", "src/main.py", "up" , "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "src/main.py", "start-server" , "--host", "0.0.0.0", "--port", "8000"]

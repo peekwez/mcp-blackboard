@@ -1,14 +1,12 @@
 # type: ignore
+import json
 from contextlib import asynccontextmanager
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
 from mcp.server.fastmcp import FastMCP
-from pydantic import ValidationError
 
-from common import get_app_config
-from models import AgentName, Plan
-from tools.context import fetch_context, get_file_age, get_filesystem
+from models import AgentName
+from scheduler import get_scheduler
+from tools.context import fetch_context
 from tools.memory import (
     fetch_blackboard,
     fetch_plan,
@@ -19,34 +17,7 @@ from tools.memory import (
     write_result,
 )
 
-
-# Set up the scheduler
-def remove_stale_files(max_age: int = 3600) -> None:
-    """
-    Remove all files in the cache directory that are older than 1 hour.
-
-    Args:
-        max_age (int): The maximum age of files to keep in seconds.
-            Default is 3600 seconds (1 hour).
-
-    Returns:
-        None
-    """
-
-    app_config = get_app_config()
-    _, cache_path = app_config.cache_path.split("://")
-    fs = get_filesystem(app_config.cache_path, app_config)
-
-    # remove all files older than 1 day
-    for file_info in fs.listdir(cache_path):
-        file_age = get_file_age(file_info)
-        if file_age > max_age:
-            fs.rm(f"{file_info['name']}")
-
-
-scheduler = BackgroundScheduler()
-trigger = CronTrigger(minute=0)  # every hour at the start of the hour
-scheduler.add_job(remove_stale_files, trigger)
+scheduler = get_scheduler()
 scheduler.start()
 
 
@@ -63,18 +34,6 @@ mcp = FastMCP(
         "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
-    dependencies=[
-        "apscheduler",
-        "dotenv",
-        "fsspec",
-        "jinja2",
-        "markitdown",
-        "openai",
-        "pydantic",
-        "pydantic-settings",
-        "pyyaml",
-        "tenacity",
-    ],
 )
 
 
@@ -108,34 +67,8 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
     Raises:
         ValueError: If the plan is not in the correct format.
     """
-    if isinstance(plan, str):
-        try:
-            parsed = Plan.parse_raw(plan)
-        except ValidationError as e:
-            raise ValidationError(
-                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
-            ) from e
-        except ValueError as e:
-            raise ValueError(
-                f"The plan must be a valid JSON string. Error: {str(e)}"
-            ) from e
-    elif isinstance(plan, dict):
-        try:
-            parsed = Plan(**plan)
-        except ValidationError as e:
-            raise ValidationError(
-                f"The plan must meet the required schema. schema \n{Plan.schema_json()}"
-            ) from e
-        except ValueError as e:
-            raise ValueError(
-                f"The plan must be a valid JSON string. Error: {str(e)}"
-            ) from e
-
-    else:
-        raise ValueError(
-            "Plan must be a JSON-serializable object or a valid JSON string."
-        )
-    return write_plan(plan_id, parsed.model_dump())
+    data = json.loads(plan) if isinstance(plan, str) else plan
+    return write_plan(plan_id, data)
 
 
 @mcp.tool()
@@ -179,13 +112,7 @@ async def save_result(
         ValueError: If the result is not in the correct format.
     """
     step_id = check_step_id(step_id)
-    return write_result(
-        plan_id,
-        str(agent_name),
-        step_id,
-        description,
-        result,
-    )
+    return write_result(plan_id, str(agent_name), step_id, description, result)
 
 
 @mcp.tool()

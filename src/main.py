@@ -29,7 +29,7 @@ def cli() -> None:
     default=8000,
     help="Port for the MCP Blackboard server.",
 )
-def up(env_file: str, host: str, port: int) -> None:
+def start_server(env_file: str, host: str, port: int) -> None:
     """
     Run the MCP Blackboard with the specified environment file.
 
