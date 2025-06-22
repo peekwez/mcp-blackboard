@@ -10,15 +10,15 @@ from jinja2 import Environment, FileSystemLoader
 from openai import OpenAI
 from redis import Redis
 
-from models import AppConfig, ConverterParams
+from nexus.models import ConverterParams, Settings
 
 TEMPLATES_DIR = Path(__file__).parent
 
-app_config: None | AppConfig = None
+settings: None | Settings = None
 redis_client: None | Redis = None
 
 
-def load_config(env_file: str) -> AppConfig:
+def load_config(env_file: str) -> Settings:
     """
     Load the configuration from a YAML file and return it as a dictionary.
 
@@ -39,33 +39,34 @@ def load_config(env_file: str) -> AppConfig:
 
     config_dict: dict[str, Any] = yaml.safe_load(rendered_yaml)
 
-    return AppConfig.model_validate(config_dict)
+    return Settings.model_validate(config_dict)
 
 
-def get_app_config(env_file: str | None = None) -> AppConfig:
+def get_settings(env_file: str | None = None) -> Settings:
     """
-    Get the application configuration.
+    Get the application settings, loading them from a YAML
+    file if not already loaded.
 
     Args:
         env_file (str | None): The path to the .env file.
 
     Returns:
-        AppConfig: The application configuration object.
+        Settings: The application settings object.
     """
-    global app_config
-    if app_config is None:
-        app_config = load_config(env_file or ".env")
+    global settings
+    if settings is None:
+        settings = load_config(env_file or ".env")
 
-    return app_config
+    return settings
 
 
-def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
+def get_converter_opts(url: str, settings: Settings) -> dict[str, Any]:
     """
     Set options for the MarkItDown converter based on the URL.
 
     Args:
         url (str): The URL to determine the options for.
-        app_config (AppConfig): The application configuration.
+        settings (Settings): The application settings.
 
     Returns:
         dict: The options for the converter.
@@ -75,26 +76,26 @@ def get_converter_opts(url: str, app_config: AppConfig) -> dict[str, Any]:
     if url.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff")):
         params = ConverterParams(
             llm_client=OpenAI(
-                api_key=app_config.converter.openai_api_key,
-                base_url=app_config.converter.openai_api_base,
+                api_key=settings.converter.openai_api_key,
+                base_url=settings.converter.openai_api_base,
             ),
-            llm_model=app_config.converter.openai_default_model,
+            llm_model=settings.converter.openai_default_model,
         )
     elif url.lower().endswith((".pdf", ".x-pdf")):
         params = ConverterParams(
-            docintel_endpoint=app_config.converter.azure_document_endpoint
+            docintel_endpoint=settings.converter.azure_document_endpoint
         )
 
     return params.model_dump()
 
 
-def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
+def get_storage_opts(url: str, settings: Settings) -> dict[str, Any] | None:
     """
     Get the storage options based on the URL protocol.
 
     Args:
         url (str): The URL to determine the options for.
-        app_config (AppConfig): The application configuration.
+        settings (Settings): The application settings.
 
     Returns:
         dict[str, Any]: The storage options for the protocol,
@@ -102,15 +103,15 @@ def get_storage_opts(url: str, app_config: AppConfig) -> dict[str, Any] | None:
     """
     protocol = url.split("://")[0]
     if protocol == "s3":
-        return app_config.storage.s3
+        return settings.storage.s3
     elif protocol == "abfs":
-        return app_config.storage.abfs
+        return settings.storage.abfs
     elif protocol == "gcs":
-        return app_config.storage.gcs
+        return settings.storage.gcs
     elif protocol == "sftp":
-        return app_config.storage.sftp
+        return settings.storage.sftp
     elif protocol == "smb":
-        return app_config.storage.smb
+        return settings.storage.smb
     elif protocol in ["file", "https"]:
         # No options needed for local file system or HTTP(S)
         return {}

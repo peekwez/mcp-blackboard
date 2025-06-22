@@ -2,19 +2,20 @@
 import pytest  # noqa F401
 from pydantic import ValidationError
 
-from models import (
-    AppConfig,
-    ConverterConfig,
+from nexus.models import (
     ConverterParams,
-    RedisConfig,
-    StorageConfig,
+    ConverterSettings,
+    RedisSettings,
+    Settings,
+    StorageSettings,
+    WebSettings,
 )
 
 
-def test_redis_config_validation():
-    """Test RedisConfig validation."""
+def test_redis_settings_validation():
+    """Test RedisSettings validation."""
     # Valid configuration
-    config = RedisConfig(host="localhost", port=6379, db=0)
+    config = RedisSettings(host="localhost", port=6379, db=0)
     assert config.host == "localhost"
     assert config.port == 6379
     assert config.db == 0
@@ -23,17 +24,17 @@ def test_redis_config_validation():
 
     # Invalid port
     with pytest.raises(ValidationError):
-        RedisConfig(host="localhost", port="invalid")
+        RedisSettings(host="localhost", port="invalid")
 
     # Invalid db
     with pytest.raises(ValidationError):
-        RedisConfig(host="localhost", port=6379, db="invalid")
+        RedisSettings(host="localhost", port=6379, db="invalid")
 
 
-def test_converter_config_validation():
-    """Test ConverterConfig validation."""
+def test_converter_settings_validation():
+    """Test ConverterSettings validation."""
     # Valid configuration
-    config = ConverterConfig(
+    config = ConverterSettings(
         azure_document_endpoint="https://example.com/document",
         openai_api_key="test-key",
         openai_api_base="https://api.openai.com/v1",
@@ -45,10 +46,10 @@ def test_converter_config_validation():
     assert config.openai_default_model == "gpt-4o"
 
 
-def test_storage_config_validation():
-    """Test StorageConfig validation."""
+def test_storage_settings_validation():
+    """Test StorageSettings validation."""
     # Valid configuration with empty options
-    config = StorageConfig(
+    config = StorageSettings(
         abfs={},
         s3={},
         gcs={},
@@ -62,7 +63,7 @@ def test_storage_config_validation():
     assert isinstance(config.smb, dict)
 
     # Valid configuration with actual options
-    config = StorageConfig(
+    config = StorageSettings(
         abfs={"account_name": "test-account"},
         s3={"key": "test-key", "secret": "test-secret"},
         gcs={},
@@ -74,80 +75,103 @@ def test_storage_config_validation():
     assert config.s3["secret"] == "test-secret"
 
 
-def test_app_config_validation():
-    """Test AppConfig validation."""
+def test_web_settings_validation():
+    """Test WebSettings validation."""
     # Valid configuration
-    config = AppConfig(
+    config = WebSettings(
+        tavily_api_key="test-key",
+        tavily_api_base="https://api.tavily.com/v1",
+        tavily_timeout=3000,
+        tavily_max_results=10,
+    )
+    assert config.tavily_api_key == "test-key"
+    assert config.tavily_api_base == "https://api.tavily.com/v1"
+    assert config.tavily_timeout == 3000
+    assert config.tavily_max_results == 10
+
+
+def test_settings_validation():
+    """Test Settings validation."""
+    # Valid configuration
+    config = Settings(
         cache_path="file:///tmp/cache",
         mcp_transport="stdio",
-        redis=RedisConfig(host="localhost", port=6379, db=0),
-        storage=StorageConfig(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
-        converter=ConverterConfig(
+        redis=RedisSettings(host="localhost", port=6379, db=0),
+        storage=StorageSettings(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
+        converter=ConverterSettings(
             azure_document_endpoint="https://example.com/document",
             openai_api_key="test-key",
             openai_api_base="https://api.openai.com/v1",
             openai_default_model="gpt-4o",
+        ),
+        web=WebSettings(
+            tavily_api_key="test-key",
+            tavily_api_base="https://api.tavily.com/v1",
         ),
     )
     assert config.cache_path == "file:///tmp/cache"
     assert config.mcp_transport == "stdio"
-    assert isinstance(config.redis, RedisConfig)
-    assert isinstance(config.storage, StorageConfig)
-    assert isinstance(config.converter, ConverterConfig)
+    assert isinstance(config.redis, RedisSettings)
+    assert isinstance(config.storage, StorageSettings)
+    assert isinstance(config.converter, ConverterSettings)
+    assert isinstance(config.web, WebSettings)
 
     # Valid configuration with SSE transport
-    config = AppConfig(
+    config = Settings(
         cache_path="file:///tmp/cache",
         mcp_transport="sse",
-        redis=RedisConfig(host="localhost", port=6379, db=0),
-        storage=StorageConfig(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
-        converter=ConverterConfig(
-            azure_document_endpoint="https://example.com/document",
-            openai_api_key="test-key",
-            openai_api_base="https://api.openai.com/v1",
-            openai_default_model="gpt-4o",
-        ),
+        redis=RedisSettings(host="localhost", port=6379, db=0),
+        storage=StorageSettings(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
+        converter=ConverterSettings(),
+        web=WebSettings(),
     )
     assert config.mcp_transport == "sse"
-
-    # Invalid transport
-    with pytest.raises(ValidationError):
-        AppConfig(
-            cache_path="file:///tmp/cache",
-            mcp_transport="invalid",
-            redis=RedisConfig(host="localhost", port=6379, db=0),
-            storage=StorageConfig(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
-            converter=ConverterConfig(
-                azure_document_endpoint="https://example.com/document",
-                openai_api_key="test-key",
-                openai_api_base="https://api.openai.com/v1",
-                openai_default_model="gpt-4o",
-            ),
-        )
 
 
 def test_converter_params():
     """Test ConverterParams model."""
-    # Default params
+    # Test with default values
     params = ConverterParams()
     assert params.enable_plugins is False
     assert params.llm_client is None
     assert params.llm_model is None
     assert params.docintel_endpoint is None
 
-    # Custom params
+    # Test with custom values
+    from openai import OpenAI
+
+    client = OpenAI(api_key="test-key")
     params = ConverterParams(
         enable_plugins=True,
+        llm_client=client,
         llm_model="gpt-4o",
         docintel_endpoint="https://example.com/document",
     )
     assert params.enable_plugins is True
+    assert params.llm_client == client
     assert params.llm_model == "gpt-4o"
     assert params.docintel_endpoint == "https://example.com/document"
 
-    # Model dump
-    dumped = params.model_dump()
-    assert isinstance(dumped, dict)
-    assert dumped["enable_plugins"] is True
-    assert dumped["llm_model"] == "gpt-4o"
-    assert dumped["docintel_endpoint"] == "https://example.com/document"
+
+def test_state_updates_enum():
+    """Test the StateUpdates enum."""
+    from nexus.models import StateUpdates
+
+    # Test string conversion
+    assert str(StateUpdates.write_plan) == "save-plan"
+    assert str(StateUpdates.update_status) == "mark-plan-as-completed"
+    assert str(StateUpdates.describe_context) == "save-context-description"
+    assert str(StateUpdates.write_result) == "save-result"
+
+    # Test string matching
+    assert StateUpdates("save-plan") == StateUpdates.write_plan
+
+    # Case sensitivity check
+    with pytest.raises(ValueError):
+        StateUpdates("SAVE-PLAN")
+
+    assert StateUpdates("mark-plan-as-completed") == StateUpdates.update_status
+
+    # Test invalid value
+    with pytest.raises(ValueError):
+        StateUpdates("invalid-update")

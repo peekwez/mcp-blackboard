@@ -1,7 +1,6 @@
 import click
 
-from common import get_app_config
-from server import mcp
+from nexus.main import start_server
 
 
 @click.group()
@@ -29,7 +28,7 @@ def cli() -> None:
     default=8000,
     help="Port for the MCP Blackboard server.",
 )
-def start_server(env_file: str, host: str, port: int) -> None:
+def run(env_file: str, host: str, port: int) -> None:
     """
     Run the MCP Blackboard with the specified environment file.
 
@@ -40,10 +39,7 @@ def start_server(env_file: str, host: str, port: int) -> None:
         None
     """
 
-    config = get_app_config(env_file)
-    mcp.settings.host = host
-    mcp.settings.port = port
-    mcp.run(transport=config.mcp_transport)
+    start_server(env_file, host, port)
 
 
 if __name__ == "__main__":

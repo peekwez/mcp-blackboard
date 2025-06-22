@@ -9,14 +9,14 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
+    wait_random_exponential,
 )
 
-from common import get_app_config, get_converter_opts, get_storage_opts
-from models import AppConfig
+from nexus.common import get_converter_opts, get_settings, get_storage_opts
+from nexus.models import Settings
 
 
-def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem:
+def get_filesystem(url: str, settings: Settings) -> fsspec.AbstractFileSystem:
     """
     Get the filesystem object based on the URL protocol.
 
@@ -28,7 +28,7 @@ def get_filesystem(url: str, app_config: AppConfig) -> fsspec.AbstractFileSystem
         fsspec.AbstractFileSystem: The filesystem object.
     """
     protocol, _ = url.split("://")
-    storage_options = get_storage_opts(url, app_config)
+    storage_options = get_storage_opts(url, settings)
     fs = fsspec.filesystem(protocol, **storage_options)
     return fs
 
@@ -70,41 +70,41 @@ def get_cache_key(url: str) -> str:
     return hashlib.md5(url.encode()).hexdigest()
 
 
-def write_cache_file(url: str, contents: str, app_config: AppConfig) -> None:
+def write_cache_file(url: str, contents: str, settings: Settings) -> None:
     """
     Write the contents to a cache file.
 
     Args:
         url (str): The URL of the file.
         contents (str): The contents to write to the cache file.
-        app_config (dict): The application configuration.
+        settings (Settings): The application settings.
 
     Returns:
         None
     """
     hash_key = get_cache_key(url)
-    _, cache_path = app_config.cache_path.split("://")
-    fs = get_filesystem(app_config.cache_path, app_config)
+    _, cache_path = settings.cache_path.split("://")
+    fs = get_filesystem(settings.cache_path, settings)
     fs.mkdirs(cache_path, exist_ok=True)
     cache_file = f"{cache_path}/{hash_key}.md"
     with fs.open(cache_file, "w") as f:
         f.write(contents)
 
 
-def _load_cache_file(url: str, app_config: AppConfig) -> str:
+def _load_cache_file(url: str, settings: Settings) -> str:
     """
     Load the contents of a cache file.
 
     Args:
         url (str): The URL of the file.
-        app_config (dict): The application configuration.
+        settings (Settings): The application settings.
 
     Returns:
         str: The contents of the cache file.
     """
     hash_key = get_cache_key(url)
-    _, cache_path = app_config.cache_path.split("://")
-    fs = get_filesystem(app_config.cache_path, app_config)
+    _, cache_path = settings.cache_path.split("://")
+    fs = get_filesystem(settings.cache_path, settings)
     cache_file = f"{cache_path}/{hash_key}.md"
     if not fs.exists(cache_file):
         raise OSError(f"Cache file {cache_file} does not exist")
@@ -115,7 +115,7 @@ def _load_cache_file(url: str, app_config: AppConfig) -> str:
 
 @retry(
     stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=0.5),
+    wait=wait_random_exponential(multiplier=1, max=15),
     retry=retry_if_exception_type(OSError),
     reraise=True,
 )
@@ -136,18 +136,18 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
         ValueError: If the URL is not valid or the conversion fails.
     """
 
-    app_config = get_app_config()
-    converter_options = get_converter_opts(file_path_or_url, app_config)
+    settings = get_settings()
+    converter_options = get_converter_opts(file_path_or_url, settings)
 
     # if a cache file exists, load it
     if use_cache:
         try:
-            return _load_cache_file(file_path_or_url, app_config)
+            return _load_cache_file(file_path_or_url, settings)
         except OSError:
             pass
 
     try:
-        fs = get_filesystem(file_path_or_url, app_config)
+        fs = get_filesystem(file_path_or_url, settings)
         with fs.open(file_path_or_url, "rb") as f:
             buffer = io.BytesIO(f.read())
     except Exception as e:
@@ -158,5 +158,5 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
 
     # save a copy of the file to the cache for future use
     if use_cache:
-        write_cache_file(file_path_or_url, document.markdown, app_config)
+        write_cache_file(file_path_or_url, document.markdown, settings)
     return document.markdown

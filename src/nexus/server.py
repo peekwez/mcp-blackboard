@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 
 from mcp.server.fastmcp import FastMCP
 
-from models import AgentName
-from scheduler import get_scheduler
-from tools.context import fetch_context
-from tools.memory import (
+from nexus.models import AgentName
+from nexus.scheduler import get_scheduler
+from nexus.tools.context import fetch_context
+from nexus.tools.memory import (
     fetch_blackboard,
     fetch_plan,
     fetch_result,
@@ -16,6 +16,7 @@ from tools.memory import (
     write_plan,
     write_result,
 )
+from nexus.tools.web import run_web_search
 
 scheduler = get_scheduler()
 scheduler.start()
@@ -50,6 +51,21 @@ def check_step_id(step_id: int) -> int:
     if not isinstance(step_id, int) or step_id <= 0:
         raise ValueError("step_id must be a positive integer.")
     return step_id
+
+
+@mcp.tool()
+async def search_web(query: str, num_results: int = 10) -> str:
+    """
+    Perform a web search using the provided query and number of results.
+
+    Args:
+        query (str): The search query.
+        num_results (int): The number of search results to return.
+
+    Returns:
+        str: A JSON string containing the search results.
+    """
+    return run_web_search(query, num_results)
 
 
 @mcp.tool()

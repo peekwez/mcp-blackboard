@@ -3,31 +3,43 @@ import json
 
 from azure.identity import DefaultAzureCredential
 from redis import Redis
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
-from common import get_app_config
-from models import ActionStream, AppConfig, StateUpdates
+from nexus.common import get_settings
+from nexus.models import ActionStream, Settings, StateUpdates
 
 redis_client: None | Redis = None
 
 
-def get_redis_client(app_config: AppConfig) -> Redis:
+def get_redis_client(settings: Settings | None = None) -> Redis:
     """
     Get the Redis client for shared memory.
 
     Returns:
         Redis: The Redis client for shared memory.
     """
-
+    settings = get_settings() if settings is None else settings
     global redis_client
     if redis_client is None:
-        if "windows.net" in app_config.redis.host:
+        if "windows.net" in settings.redis.host:
             cred = DefaultAzureCredential()
             token = cred.get_token("https://redis.azure.com/.default")
-            app_config.redis.password = token.token
-        redis_client = Redis(**app_config.redis.model_dump())
+            settings.redis.password = token.token
+        redis_client = Redis(**settings.redis.model_dump())
     return redis_client
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def add_to_stream(stream: ActionStream) -> str:
     """
     Add an action to the Redis stream for state updates.
@@ -38,7 +50,8 @@ def add_to_stream(stream: ActionStream) -> str:
     Returns:
         str: A confirmation message.
     """
-    client = get_redis_client(get_app_config())
+
+    client = get_redis_client()
     stream_key = f"task-updates:{stream.plan_id}"
     try:
         client.xadd(stream_key, stream.model_dump(mode="json"))
@@ -50,6 +63,12 @@ def add_to_stream(stream: ActionStream) -> str:
     return "ok"
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def write_plan(plan_id: str, plan: dict | str) -> str:
     """
     Write a plan to the shared state
@@ -70,7 +89,7 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
     if isinstance(plan, str):
         plan = json.loads(plan)
 
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     client.json().set(plan_id, "$", plan)
     client.expire(plan_id, 3600)
 
@@ -81,6 +100,12 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
     return "ok"
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def update_plan_status(plan_id: str, step_id: int, status: str = "completed") -> str:
     """
     Mark a plan step as done in the shared state
@@ -93,7 +118,7 @@ def update_plan_status(plan_id: str, step_id: int, status: str = "completed") ->
     Returns:
         str: A confirmation message.
     """
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     path = f".steps.[{step_id - 1}].status"
     client.json().set(plan_id, path, status)
 
@@ -103,6 +128,12 @@ def update_plan_status(plan_id: str, step_id: int, status: str = "completed") ->
     return "ok"
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def write_context_description(
     plan_id: str, file_path_or_url: str, description: str
 ) -> str:
@@ -117,7 +148,7 @@ def write_context_description(
     Returns:
         str: A confirmation message.
     """
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
 
     _b_key = f"blackboard|{plan_id}".lower()
     _v_key = f"context|{plan_id}|{file_path_or_url}"
@@ -132,6 +163,12 @@ def write_context_description(
     return "ok"
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def write_result(
     plan_id: str, agent_name: str, step_id: int, description: str, result: dict | str
 ) -> str:
@@ -157,7 +194,7 @@ def write_result(
     if isinstance(result, dict):
         result = json.dumps(result)
 
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     _b_key = f"blackboard|{plan_id}".lower()
     _v_key = f"result|{plan_id}|{step_id}|{agent_name}".lower()
     client.hset(_b_key, _v_key, description)
@@ -178,6 +215,12 @@ def write_result(
     return "ok"
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def fetch_plan(plan_id: str) -> str | dict | None:
     """
     Fetch a plan from the shared state
@@ -188,10 +231,16 @@ def fetch_plan(plan_id: str) -> str | dict | None:
     Returns:
         str | dict | None: The plan associated with the ID, or None if not found.
     """
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     return client.json().get(plan_id)
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def fetch_blackboard(plan_id: str) -> str | dict | None:
     """
     Fetch a blackboard from the shared state
@@ -202,11 +251,17 @@ def fetch_blackboard(plan_id: str) -> str | dict | None:
     Returns:
         str | dict | None: The blackboard associated with the ID, or None if not found.
     """
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     _b_key = f"blackboard|{plan_id}".lower()
     return json.dumps(client.hgetall(_b_key))
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=10),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
 def fetch_result(plan_id: str, agent_name: str, step_id: int) -> str | dict | None:
     """
     Fetch a result from the shared state
@@ -220,6 +275,6 @@ def fetch_result(plan_id: str, agent_name: str, step_id: int) -> str | dict | No
         str | dict | None: The result associated with the plan, agent, and step,
         or None if not found.
     """
-    client = get_redis_client(get_app_config())
+    client = get_redis_client()
     _v_key = f"result|{plan_id}|{step_id}|{agent_name}".lower()
     return json.dumps(client.get(_v_key))

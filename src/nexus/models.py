@@ -25,6 +25,7 @@ class AgentName(StrEnum):
     CONTEXT_BUILDER = "context builder"
     VALIDATOR = "validator"
     SUMMARIZER = "summarizer"
+    OPTIMIZER = "optimizer"
 
     @classmethod
     def _missing_(cls, value):
@@ -39,7 +40,7 @@ class AgentName(StrEnum):
         return self.value
 
 
-class StorageConfig(BaseModel):
+class StorageSettings(BaseModel):
     abfs: dict[str, str | bool | int | None] | None = None
     s3: dict[str, str | bool | int | dict[str, Any] | None] | None = None
     gcs: dict[str, str | bool | int | None] | None = None
@@ -47,14 +48,14 @@ class StorageConfig(BaseModel):
     smb: dict[str, str | bool | int | None] | None = None
 
 
-class ConverterConfig(BaseModel):
+class ConverterSettings(BaseModel):
     azure_document_endpoint: str | None = None
     openai_api_key: str | None = None
     openai_api_base: str | None = None
     openai_default_model: str = "gpt-4o"
 
 
-class RedisConfig(BaseModel):
+class RedisSettings(BaseModel):
     host: str
     port: int = 6379
     db: int = 0
@@ -72,12 +73,20 @@ class RedisConfig(BaseModel):
     decode_responses: bool = True
 
 
-class AppConfig(BaseSettings):
+class WebSettings(BaseModel):
+    tavily_api_key: str | None = None
+    tavily_api_base: str = "https://api.tavily.com/v1"
+    tavily_timeout: int = 3000  # in milliseconds
+    tavily_max_results: int = 10
+
+
+class Settings(BaseSettings):
     cache_path: str
     mcp_transport: Literal["stdio", "sse"]
-    redis: RedisConfig
-    storage: StorageConfig
-    converter: ConverterConfig
+    web: WebSettings
+    redis: RedisSettings
+    storage: StorageSettings
+    converter: ConverterSettings
 
 
 class ConverterParams(BaseModel):
@@ -87,30 +96,6 @@ class ConverterParams(BaseModel):
     llm_client: OpenAI | None = None
     llm_model: str | None = None
     docintel_endpoint: str | None = None
-
-
-class PlanStep(BaseModel):
-    id: int = Field(..., description="Unique identifier for the step.")
-    agent: AgentName = Field(
-        ..., description="The agent responsible for executing the step."
-    )
-    prompt: str = Field(..., description="The prompt to be sent to the agent.")
-    revision: int = Field(..., description="The revision number of the step.")
-    status: Literal["pending", "completed"] = Field(
-        ..., description="The status of the step."
-    )
-    depends_on: list[int] = Field(
-        default=[], description="A list of step IDs that this step depends on."
-    )
-
-
-class Plan(BaseModel):
-    id: str = Field(..., description="Unique identifier for the plan.")
-    goal: str = Field(..., description="The goal of the plan.")
-    steps: list[PlanStep] = Field(
-        ...,
-        description="A collection of steps to be executed by different agents.",
-    )
 
 
 class ActionStream(BaseModel):

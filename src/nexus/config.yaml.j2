@@ -1,6 +1,9 @@
 cache_path: {{ env.CACHE_PATH | default('file:///tmp/data/cache') }}
 mcp_transport: {{ env.MCP_TRANSPORT | default('stdio') }}
 
+web:
+    tavily_api_key: {{ env.TAVILY_API_KEY | default('') }}
+
 redis:
     host: {{ env.REDIS_HOST | default('localhost') }}
     port: {{ env.REDIS_PORT | default(6379) }}

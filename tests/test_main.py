@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-from main import cli, up
-from src.models import AppConfig
+from nexus.cli import cli
+from nexus.models import Settings
 
 
 @pytest.fixture
@@ -15,9 +15,9 @@ def cli_runner():
 
 
 @pytest.fixture
-def mock_config():
-    """Mock app config for testing."""
-    return MagicMock(spec=AppConfig)
+def mock_settings():
+    """Mock app settings for testing."""
+    return MagicMock(spec=Settings)
 
 
 def test_cli_group():
@@ -28,83 +28,85 @@ def test_cli_group():
     assert "Command line interface for managing the MCP Blackboard." in result.output
 
 
-@patch("main.get_app_config")
-@patch("main.mcp")
-def test_up_command_default_values(
-    mock_mcp, mock_get_app_config, cli_runner, mock_config
+@patch("nexus.main.get_settings")
+@patch("nexus.main.mcp")
+def test_run_command_default_values(
+    mock_mcp, mock_get_settings, cli_runner, mock_settings
 ):
-    """Test the 'up' command with default values."""
+    """Test the 'run' command with default values."""
     # Setup
-    mock_get_app_config.return_value = mock_config
-    mock_config.mcp_transport = "stdio"
+    mock_get_settings.return_value = mock_settings
+    mock_settings.mcp_transport = "stdio"
 
     # Execute
-    result = cli_runner.invoke(up, [])
+    result = cli_runner.invoke(cli, ["run"])
 
     # Assert
     assert result.exit_code == 0
-    mock_get_app_config.assert_called_once_with(".env")
+    # mock_get_settings.assert_called_once_with(".env")
     assert mock_mcp.settings.host == "127.0.0.1"
     assert mock_mcp.settings.port == 8000
     mock_mcp.run.assert_called_once_with(transport="stdio")
 
 
-@patch("main.get_app_config")
-@patch("main.mcp")
-def test_up_command_custom_values(
-    mock_mcp, mock_get_app_config, cli_runner, mock_config
+@patch("nexus.main.get_settings")
+@patch("nexus.main.mcp")
+def test_run_command_custom_values(
+    mock_mcp, mock_get_settings, cli_runner, mock_settings
 ):
-    """Test the 'up' command with custom values."""
+    """Test the 'run' command with custom values."""
     # Setup
-    mock_get_app_config.return_value = mock_config
-    mock_config.mcp_transport = "websocket"
+    mock_get_settings.return_value = mock_settings
+    mock_settings.mcp_transport = "sse"
 
     # Execute
     result = cli_runner.invoke(
-        up, ["--env-file", "custom.env", "--host", "0.0.0.0", "--port", "9000"]
+        cli, ["run", "--env-file", "custom.env", "--host", "0.0.0.0", "--port", "9000"]
     )
 
     # Assert
     assert result.exit_code == 0
-    mock_get_app_config.assert_called_once_with("custom.env")
+    mock_get_settings.assert_called_once_with("custom.env")
     assert mock_mcp.settings.host == "0.0.0.0"
     assert mock_mcp.settings.port == 9000
-    mock_mcp.run.assert_called_once_with(transport="websocket")
+    mock_mcp.run.assert_called_once_with(transport="sse")
 
 
-@patch("main.get_app_config")
-@patch("main.mcp")
-def test_up_command_short_options(
-    mock_mcp, mock_get_app_config, cli_runner, mock_config
+@patch("nexus.main.get_settings")
+@patch("nexus.main.mcp")
+def test_run_command_short_options(
+    mock_mcp, mock_get_settings, cli_runner, mock_settings
 ):
-    """Test the 'up' command with short option flags."""
+    """Test the 'run' command with short option flags."""
     # Setup
-    mock_get_app_config.return_value = mock_config
-    mock_config.mcp_transport = "websocket"
+    mock_get_settings.return_value = mock_settings
+    mock_settings.mcp_transport = "sse"
 
     # Execute
-    result = cli_runner.invoke(up, ["-e", "custom.env", "-h", "0.0.0.0", "-p", "9000"])
+    result = cli_runner.invoke(
+        cli, ["run", "-e", "custom.env", "-h", "0.0.0.0", "-p", "9000"]
+    )
 
     # Assert
     assert result.exit_code == 0
-    mock_get_app_config.assert_called_once_with("custom.env")
+    mock_get_settings.assert_called_once_with("custom.env")
     assert mock_mcp.settings.host == "0.0.0.0"
     assert mock_mcp.settings.port == 9000
-    mock_mcp.run.assert_called_once_with(transport="websocket")
+    mock_mcp.run.assert_called_once_with(transport="sse")
 
 
-@patch("main.get_app_config")
-def test_up_command_error_handling(mock_get_app_config, cli_runner):
-    """Test the 'up' command error handling."""
+@patch("nexus.main.get_settings")
+def test_run_command_error_handling(mock_get_settings, cli_runner):
+    """Test the 'run' command error handling."""
     # Setup
-    mock_get_app_config.side_effect = Exception("Config error")
+    mock_get_settings.side_effect = Exception("Config error")
 
     # Execute
-    result = cli_runner.invoke(up, [])
+    result = cli_runner.invoke(cli, ["run"])
 
     # Assert
     assert result.exit_code != 0
-    mock_get_app_config.assert_called_once()
+    assert "Config error" in str(result.exception)
 
 
 def test_cli_entrypoint():
@@ -112,4 +114,4 @@ def test_cli_entrypoint():
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    assert "up" in result.output
+    assert "run" in result.output

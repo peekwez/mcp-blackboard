@@ -44,8 +44,7 @@ link-data: link-path
 	ls -l /tmp/genai/data/
 
 debug:
-	cd src && uv run -m main up \
-		--env-file ${ENV_FILE}
+	uv run nexus run --env-file ${ENV_FILE}
 
 build:
 	docker build -t mcp/blackboard .
@@ -75,3 +74,6 @@ inspect:
 clean:
 	docker system prune -f
 	docker container prune -f
+
+install:
+	uv pip install -e .
