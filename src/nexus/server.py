@@ -2,6 +2,7 @@
 import json
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 
 from nexus.models import AgentName
@@ -28,6 +29,7 @@ async def lifespan(mcp: FastMCP):
     scheduler.shutdown()
 
 
+app = FastAPI()
 mcp = FastMCP(
     name="MCP Blackboard Server",
     instructions=(
@@ -53,7 +55,18 @@ def check_step_id(step_id: int) -> int:
     return step_id
 
 
-@mcp.tool()
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint to verify the server is running.
+
+    Returns:
+        dict: A dictionary indicating the server is healthy.
+    """
+    return {"status": "healthy"}
+
+
+@mcp.tool(name="Search Web")
 async def search_web(query: str, num_results: int = 10) -> str:
     """
     Perform a web search using the provided query and number of results.
@@ -68,7 +81,7 @@ async def search_web(query: str, num_results: int = 10) -> str:
     return run_web_search(query, num_results)
 
 
-@mcp.tool()
+@mcp.tool(name="Save Plan")
 async def save_plan(plan_id: str, plan: dict | str) -> str:
     """
     Save a plan to the shared state
@@ -87,7 +100,7 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
     return write_plan(plan_id, data)
 
 
-@mcp.tool()
+@mcp.tool(name="Mark Plan as Completed")
 async def mark_plan_as_completed(plan_id: str, step_id: int) -> str:
     """
     Mark a plan as completed in the shared state
@@ -103,7 +116,7 @@ async def mark_plan_as_completed(plan_id: str, step_id: int) -> str:
     return update_plan_status(plan_id, step_id)
 
 
-@mcp.tool()
+@mcp.tool(name="Save Result")
 async def save_result(
     plan_id: str,
     agent_name: AgentName,
@@ -131,7 +144,7 @@ async def save_result(
     return write_result(plan_id, str(agent_name), step_id, description, result)
 
 
-@mcp.tool()
+@mcp.tool(name="Save Context Description")
 async def save_context_description(
     plan_id: str, file_path_or_url: str, description: str
 ) -> str:
@@ -149,7 +162,7 @@ async def save_context_description(
     return write_context_description(plan_id, file_path_or_url, description)
 
 
-@mcp.tool()
+@mcp.tool(name="Get Blackboard")
 async def get_blackboard(plan_id: str) -> str | dict | None:
     """
     Fetch a blackboard entry for a plan from the shared state
@@ -164,7 +177,7 @@ async def get_blackboard(plan_id: str) -> str | dict | None:
     return fetch_blackboard(plan_id)
 
 
-@mcp.tool()
+@mcp.tool(name="Get Plan")
 async def get_plan(plan_id: str) -> str | dict | None:
     """
     Fetch a plan from the shared state
@@ -178,7 +191,7 @@ async def get_plan(plan_id: str) -> str | dict | None:
     return fetch_plan(plan_id)
 
 
-@mcp.tool()
+@mcp.tool(name="Get Result")
 async def get_result(
     plan_id: str, agent_name: AgentName, step_id: int
 ) -> str | dict | None:
@@ -197,7 +210,7 @@ async def get_result(
     return fetch_result(plan_id, str(agent_name), step_id)
 
 
-@mcp.tool()
+@mcp.tool(name="Get Context")
 async def get_context(file_path_or_url: str, use_cache: bool = True) -> str:
     """
     Reads the contents of a media location and convert the contents

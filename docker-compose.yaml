@@ -20,6 +20,11 @@ services:
       - 6380:6379
     networks:
       - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
 
   vol-blackboard:
     image: busybox

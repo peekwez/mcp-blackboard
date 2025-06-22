@@ -1,5 +1,8 @@
 cache_path: {{ env.CACHE_PATH | default('file:///tmp/data/cache') }}
 mcp_transport: {{ env.MCP_TRANSPORT | default('stdio') }}
+debug: {{ env.DEBUG | default(false) }}
+log_level:
+    level: {{ env.LOG_LEVEL | default('info') }}
 
 web:
     tavily_api_key: {{ env.TAVILY_API_KEY | default('') }}

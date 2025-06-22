@@ -82,7 +82,9 @@ class WebSettings(BaseModel):
 
 class Settings(BaseSettings):
     cache_path: str
-    mcp_transport: Literal["stdio", "sse"]
+    mcp_transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http"
+    debug: bool = False
+    log_level: Literal["debug", "info", "warning", "error", "critical"] = "info"
     web: WebSettings
     redis: RedisSettings
     storage: StorageSettings
