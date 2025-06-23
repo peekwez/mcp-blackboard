@@ -10,3 +10,7 @@ __pycache__
 .git
 Makefile
 README.md
+htmlcov
+mypy_cache
+.coverage
+.env*

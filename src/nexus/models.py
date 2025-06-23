@@ -80,15 +80,26 @@ class WebSettings(BaseModel):
     tavily_max_results: int = 10
 
 
+class LoggingSettings(BaseModel):
+    enabled: bool = Field(default=True, description="Enable or disable logging.")
+    level: Literal["debug", "info", "warning", "error", "critical"] = "info"
+    filename: str = Field(
+        default="logs/blackboard-mcp/app.log", description="Name of the log file."
+    )
+    rotation: str = Field(default="100 MB", description="Log file rotation size.")
+    retention: str = Field(default="30 days", description="Log file retention period.")
+    compression: str = Field(default="zip", description="Log file compression format.")
+
+
 class Settings(BaseSettings):
     cache_path: str
     mcp_transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http"
     debug: bool = False
-    log_level: Literal["debug", "info", "warning", "error", "critical"] = "info"
-    web: WebSettings
-    redis: RedisSettings
-    storage: StorageSettings
-    converter: ConverterSettings
+    logging: LoggingSettings = LoggingSettings()
+    web: WebSettings = WebSettings()
+    redis: RedisSettings = RedisSettings()
+    storage: StorageSettings = StorageSettings()
+    converter: ConverterSettings = ConverterSettings()
 
 
 class ConverterParams(BaseModel):

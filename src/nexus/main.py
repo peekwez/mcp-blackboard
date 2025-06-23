@@ -1,7 +1,8 @@
 import uvicorn
 
+from nexus.app import app
 from nexus.common import get_settings
-from nexus.server import app, mcp
+from nexus.server import mcp
 
 
 def start_server(env_file: str, host: str = "127.0.0.1", port: int = 8000) -> None:
@@ -17,13 +18,14 @@ def start_server(env_file: str, host: str = "127.0.0.1", port: int = 8000) -> No
 
     settings = get_settings(env_file)
     if settings.mcp_transport == "streamable-http":
+        mcp.settings.mount_path = "/mcp"
         mcp_app = mcp.streamable_http_app()
-        app.mount("/mcp", mcp_app)
+        app.mount("/blackboard", mcp_app)
         uvicorn.run(
             app,
             host=host,
             port=port,
-            log_level=settings.log_level,
+            log_level=settings.logging.level,
             reload=settings.debug,
         )
     elif settings.mcp_transport == "sse":

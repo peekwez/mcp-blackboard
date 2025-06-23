@@ -9,6 +9,15 @@ from nexus.common import get_settings
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# Monkey patch requests to disable SSL verification
+# # This should be used with caution as it reduces security
+# os.environ["PYTHONWARNINGS"] = "ignore:Unverified HTTPS request"
+# original_request = requests.request
+# requests.request = lambda *args, **kwargs: original_request(  # type: ignore
+#     *args,  # type: ignore
+#     **{**kwargs, "verify": False},  # type: ignore
+# )
+
 
 class WebSearchArguments(BaseModel):
     query: str = Field(..., description="The search query.")
@@ -70,3 +79,28 @@ def run_web_search(query: str, num_results: int) -> str:
 
     search_results = SearchResults(results=results)
     return search_results.model_dump_json(indent=2)
+
+
+# if __name__ == "__main__":
+#     # Example usage
+#     from pathlib import Path
+
+#     home = Path.home()
+#     query = "Bank rates in canada"
+#     num_results = 5
+#     env_path = (
+#         home
+#         / "Desktop"
+#         / "projects"
+#         / "agent-foundry"
+#         / "mcp-blackboard"
+#         / ".env.docker"
+#     )
+#     print(f"Using environment file: {env_path}")
+#     if not env_path.exists():
+#         raise FileNotFoundError(f"Environment file not found: {env_path}")
+#     get_settings(str(env_path))
+#     print("Settings loaded")
+#     search_results_json = run_web_search(query, 1)
+#     print("Search results JSON:")
+#     print(search_results_json)

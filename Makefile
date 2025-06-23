@@ -1,4 +1,4 @@
-ENV_FILE ?= .env
+ENV_FILE ?= .env.docker
 
 .PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean up down check
 
@@ -44,10 +44,10 @@ link-data: link-path
 	ls -l /tmp/genai/data/
 
 debug:
-	uv run nexus run --env-file ${ENV_FILE}
+	nexus run --env-file ${ENV_FILE}
 
 build:
-	docker build -t mcp/blackboard .
+	docker build -t blackboard-mcp/python313 .
 
 run: link-data
 	docker run -it --rm \

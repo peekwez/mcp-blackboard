@@ -1,8 +1,14 @@
 cache_path: {{ env.CACHE_PATH | default('file:///tmp/data/cache') }}
 mcp_transport: {{ env.MCP_TRANSPORT | default('stdio') }}
 debug: {{ env.DEBUG | default(false) }}
-log_level:
-    level: {{ env.LOG_LEVEL | default('info') }}
+
+logging:
+    enabled: {{ env.LOGGING_ENABLED | default(true) }}
+    level: {{ env.LOGGING_LEVEL | default('info') }}
+    filename: {{ env.LOG_FILE | default('logs/blackboard-mcp/app.log') }}
+    rotation: {{ env.LOG_ROTATION | default('100 MB') }}
+    retention: {{ env.LOG_RETENTION | default('30 days') }}
+    compression: {{ env.LOG_COMPRESSION | default('zip') }}
 
 web:
     tavily_api_key: {{ env.TAVILY_API_KEY | default('') }}

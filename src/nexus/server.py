@@ -2,7 +2,6 @@
 import json
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
 from mcp.server.fastmcp import FastMCP
 
 from nexus.models import AgentName
@@ -29,7 +28,6 @@ async def lifespan(mcp: FastMCP):
     scheduler.shutdown()
 
 
-app = FastAPI()
 mcp = FastMCP(
     name="MCP Blackboard Server",
     instructions=(
@@ -37,6 +35,7 @@ mcp = FastMCP(
         "static and dynamic data for an agent task"
     ),
     lifespan=lifespan,
+    stateless_http=True,
 )
 
 
@@ -53,17 +52,6 @@ def check_step_id(step_id: int) -> int:
     if not isinstance(step_id, int) or step_id <= 0:
         raise ValueError("step_id must be a positive integer.")
     return step_id
-
-
-@app.get("/health")
-async def health_check():
-    """
-    Health check endpoint to verify the server is running.
-
-    Returns:
-        dict: A dictionary indicating the server is healthy.
-    """
-    return {"status": "healthy"}
 
 
 @mcp.tool(name="Search Web")

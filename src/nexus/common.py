@@ -38,7 +38,6 @@ def load_config(env_file: str) -> Settings:
     rendered_yaml: str = template.render(env=os.environ)
 
     config_dict: dict[str, Any] = yaml.safe_load(rendered_yaml)
-
     return Settings.model_validate(config_dict)
 
 
