@@ -1,4 +1,7 @@
 # type: ignore
+from __future__ import annotations
+
+import base64
 import datetime
 import hashlib
 import io
@@ -13,6 +16,7 @@ from tenacity import (
 )
 
 from nexus.common import get_converter_opts, get_settings, get_storage_opts
+from nexus.logging import get_logger
 from nexus.models import Settings
 
 
@@ -82,6 +86,7 @@ def write_cache_file(url: str, contents: str, settings: Settings) -> None:
     Returns:
         None
     """
+    logger = get_logger(__name__)
     hash_key = get_cache_key(url)
     _, cache_path = settings.cache_path.split("://")
     fs = get_filesystem(settings.cache_path, settings)
@@ -89,6 +94,7 @@ def write_cache_file(url: str, contents: str, settings: Settings) -> None:
     cache_file = f"{cache_path}/{hash_key}.md"
     with fs.open(cache_file, "w") as f:
         f.write(contents)
+    logger.info(f"Cache file written: {cache_file} for URL: {url}")
 
 
 def _load_cache_file(url: str, settings: Settings) -> str:
@@ -102,6 +108,7 @@ def _load_cache_file(url: str, settings: Settings) -> str:
     Returns:
         str: The contents of the cache file.
     """
+    logger = get_logger(__name__)
     hash_key = get_cache_key(url)
     _, cache_path = settings.cache_path.split("://")
     fs = get_filesystem(settings.cache_path, settings)
@@ -111,6 +118,7 @@ def _load_cache_file(url: str, settings: Settings) -> str:
 
     with fs.open(cache_file, "r") as f:
         return f.read()
+    logger.info(f"Cache file loaded: {cache_file} for URL: {url}")
 
 
 @retry(
@@ -138,7 +146,7 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
 
     settings = get_settings()
     converter_options = get_converter_opts(file_path_or_url, settings)
-
+    logger = get_logger(__name__)
     # if a cache file exists, load it
     if use_cache:
         try:
@@ -151,6 +159,7 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
         with fs.open(file_path_or_url, "rb") as f:
             buffer = io.BytesIO(f.read())
     except Exception as e:
+        logger.error(f"Failed to load file from {file_path_or_url}: {e}")
         raise OSError(f"Failed to load file from {file_path_or_url}: {e}") from None
 
     client = markitdown.MarkItDown(**converter_options)
@@ -159,4 +168,33 @@ def fetch_context(file_path_or_url: str, use_cache: bool = True) -> str:
     # save a copy of the file to the cache for future use
     if use_cache:
         write_cache_file(file_path_or_url, document.markdown, settings)
+    logger.info(f"File converted to markdown: {file_path_or_url}")
     return document.markdown
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=1, max=15),
+    retry=retry_if_exception_type(OSError),
+    reraise=True,
+)
+def save_context(data: str, file_path: str) -> str:
+    """
+    Save the contents to a file and return the file path.
+
+    Args:
+        data (str): Base 64 encoded string data to save.
+        file_name (str): The name of the file to save.
+
+    Returns:
+        str: The path to the saved file.
+    """
+    settings = get_settings()
+    logger = get_logger(__name__)
+    contents = base64.b64decode(data.split(",")[1])
+    file_url = f"{settings.data_path}/{file_path.lstrip('/')}"
+    fs = get_filesystem(file_url, settings)
+    with fs.open(file_url, "wb") as f:
+        f.write(contents)
+    logger.info(f"File saved: {file_url}")
+    return file_url

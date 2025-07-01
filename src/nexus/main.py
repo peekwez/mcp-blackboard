@@ -17,6 +17,7 @@ def start_server(env_file: str, host: str = "127.0.0.1", port: int = 8000) -> No
     """
 
     settings = get_settings(env_file)
+
     if settings.mcp_transport == "streamable-http":
         mcp.settings.mount_path = "/mcp"
         mcp_app = mcp.streamable_http_app()

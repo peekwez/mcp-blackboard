@@ -2,7 +2,9 @@ from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
 
+from nexus.models import ContextData
 from nexus.server import mcp
+from nexus.tools.context import save_context
 
 
 @asynccontextmanager
@@ -32,3 +34,18 @@ async def health_check() -> dict[str, str]:
         dict: A dictionary indicating the server is healthy.
     """
     return {"status": "healthy"}
+
+
+@app.put("/save-file")
+async def save_file(context: ContextData) -> dict[str, str]:
+    """
+    Save context data to the blackboard.
+
+    Args:
+        context (ContextData): The context data to save.
+
+    Returns:
+        dict: A confirmation message.
+    """
+    file_url = save_context(context.data, context.file_path)
+    return {"file_url": file_url}

@@ -6,17 +6,9 @@ from tavily import TavilyClient  # type: ignore
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from nexus.common import get_settings
+from nexus.logging import get_logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Monkey patch requests to disable SSL verification
-# # This should be used with caution as it reduces security
-# os.environ["PYTHONWARNINGS"] = "ignore:Unverified HTTPS request"
-# original_request = requests.request
-# requests.request = lambda *args, **kwargs: original_request(  # type: ignore
-#     *args,  # type: ignore
-#     **{**kwargs, "verify": False},  # type: ignore
-# )
 
 
 class WebSearchArguments(BaseModel):
@@ -58,6 +50,7 @@ def run_web_search(query: str, num_results: int) -> str:
         str: A JSON string containing the search results.
     """
     settings = get_settings()
+    logger = get_logger(__name__)
     client = TavilyClient(api_key=settings.web.tavily_api_key)
     ret: dict[str, Any] = client.search(  # type: ignore
         query,
@@ -78,29 +71,7 @@ def run_web_search(query: str, num_results: int) -> str:
         results.append(result)
 
     search_results = SearchResults(results=results)
+    logger.info(
+        "Search results for query '%s' completed with %d result", query, len(results)
+    )
     return search_results.model_dump_json(indent=2)
-
-
-# if __name__ == "__main__":
-#     # Example usage
-#     from pathlib import Path
-
-#     home = Path.home()
-#     query = "Bank rates in canada"
-#     num_results = 5
-#     env_path = (
-#         home
-#         / "Desktop"
-#         / "projects"
-#         / "agent-foundry"
-#         / "mcp-blackboard"
-#         / ".env.docker"
-#     )
-#     print(f"Using environment file: {env_path}")
-#     if not env_path.exists():
-#         raise FileNotFoundError(f"Environment file not found: {env_path}")
-#     get_settings(str(env_path))
-#     print("Settings loaded")
-#     search_results_json = run_web_search(query, 1)
-#     print("Search results JSON:")
-#     print(search_results_json)

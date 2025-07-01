@@ -9,8 +9,9 @@ from pydantic_settings import BaseSettings
 
 class StateUpdates(StrEnum):
     write_plan = "save-plan"
-    update_status = "mark-plan-as-completed"
+    update_status = "update-status"
     describe_context = "save-context-description"
+    evaluate_result = "evaluate-result"
     write_result = "save-result"
 
 
@@ -56,7 +57,7 @@ class ConverterSettings(BaseModel):
 
 
 class RedisSettings(BaseModel):
-    host: str
+    host: str = "localhost"
     port: int = 6379
     db: int = 0
     username: str | None = None
@@ -83,8 +84,8 @@ class WebSettings(BaseModel):
 class LoggingSettings(BaseModel):
     enabled: bool = Field(default=True, description="Enable or disable logging.")
     level: Literal["debug", "info", "warning", "error", "critical"] = "info"
-    filename: str = Field(
-        default="logs/blackboard-mcp/app.log", description="Name of the log file."
+    root_dir: str = Field(
+        default="logs/blackboard-mcp", description="Directory for log files."
     )
     rotation: str = Field(default="100 MB", description="Log file rotation size.")
     retention: str = Field(default="30 days", description="Log file retention period.")
@@ -93,13 +94,29 @@ class LoggingSettings(BaseModel):
 
 class Settings(BaseSettings):
     cache_path: str
+    data_path: str
     mcp_transport: Literal["stdio", "sse", "streamable-http"] = "streamable-http"
     debug: bool = False
-    logging: LoggingSettings = LoggingSettings()
-    web: WebSettings = WebSettings()
-    redis: RedisSettings = RedisSettings()
-    storage: StorageSettings = StorageSettings()
-    converter: ConverterSettings = ConverterSettings()
+    logging: LoggingSettings = Field(
+        LoggingSettings(),
+        description="Logging configuration for the application.",
+    )
+    web: WebSettings = Field(
+        WebSettings(),
+        description="Web API configuration for the application.",
+    )
+    redis: RedisSettings = Field(
+        RedisSettings(),
+        description="Redis configuration for the application.",
+    )
+    storage: StorageSettings = Field(
+        StorageSettings(),
+        description="Storage configuration for the application.",
+    )
+    converter: ConverterSettings = Field(
+        ConverterSettings(),
+        description="Converter configuration for the application.",
+    )
 
 
 class ConverterParams(BaseModel):
@@ -112,10 +129,11 @@ class ConverterParams(BaseModel):
 
 
 class ActionStream(BaseModel):
-    """
-    Represents a stream of state updates for a plan.
-    """
-
     plan_id: str = Field(..., description="The ID of the plan.")
     action: StateUpdates = Field(..., description="The action performed on the plan.")
     data: str = Field(..., description="The data associated with the action.")
+
+
+class ContextData(BaseModel):
+    file_path: str = Field(..., description="The path to the file in the S3 bucket.")
+    data: str = Field(..., description="The contents of the file.")

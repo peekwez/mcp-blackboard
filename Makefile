@@ -1,4 +1,5 @@
-ENV_FILE ?= .env.docker
+ENV_FILE ?= .env.local
+PORT ?= 8001
 
 .PHONY: sync format lint mypy tests coverage debug build run start stop inspect clean up down check
 
@@ -44,7 +45,7 @@ link-data: link-path
 	ls -l /tmp/genai/data/
 
 debug:
-	nexus run --env-file ${ENV_FILE}
+	nexus run --env-file ${ENV_FILE} --port ${PORT} --host localhost
 
 build:
 	docker build -t blackboard-mcp/python313 .
@@ -52,7 +53,7 @@ build:
 run: link-data
 	docker run -it --rm \
 		--env-file .env.docker \
-		-p 8000:8000 \
+		-p ${PORT}:8000 \
 		-v /tmp/genai/data:/app/data \
 		-v /tmp/genai/cache:/app/cache \
 		--name mcp-blackboard \
