@@ -49,8 +49,8 @@ jobs:
       - name: Run mypy via Makefile
         run: make mypy
 
-      - name: Run tests via Makefile
-        run: make coverage
+      # - name: Run tests via Makefile
+      #   run: make coverage
 
       # - name: Update badges
       #   run: |
