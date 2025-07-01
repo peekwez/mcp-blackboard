@@ -1,14 +1,21 @@
 # type: ignore
+
 import json
 from contextlib import asynccontextmanager
+from typing import Any
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from mcp.server.fastmcp import FastMCP
+from pydantic import BaseModel, ValidationError
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 
-from nexus.models import AgentName
+from nexus.logging import get_logger
+from nexus.models import ActionStream, AgentName, ContextData
 from nexus.scheduler import get_scheduler
-from nexus.tools.context import fetch_context
+from nexus.tools.context import fetch_context, save_context
 from nexus.tools.memory import (
+    add_to_stream,
     fetch_blackboard,
     fetch_evaluation,
     fetch_plan,
@@ -33,10 +40,10 @@ async def lifespan(mcp: FastMCP):
         raise RuntimeError("Scheduler is not initialized.")
 
     if not scheduler.running:
-        scheduler.start()
+        scheduler.start()  # type: ignore
     yield
     if scheduler and scheduler.running:
-        scheduler.shutdown()
+        scheduler.shutdown()  # type: ignore
 
 
 mcp = FastMCP(
@@ -50,6 +57,17 @@ mcp = FastMCP(
 )
 
 
+async def validate_data(request: Request, model_cls: BaseModel) -> Any | JSONResponse:
+    try:
+        raw_body = await request.json()
+        data = model_cls.model_validate_json(raw_body)
+        return data
+    except ValidationError as e:
+        return JSONResponse({"detail": e.errors()}, status_code=422)
+    except Exception as e:
+        return JSONResponse({"detail": str(e)}, status_code=400)
+
+
 def check_step_id(step_id: int) -> int:
     """
     Check if the step ID is valid.
@@ -60,7 +78,7 @@ def check_step_id(step_id: int) -> int:
     Raises:
         ValueError: If the step ID is not a positive integer.
     """
-    if not isinstance(step_id, int) or step_id <= 0:
+    if step_id <= 0:
         raise ValueError("step_id must be a positive integer.")
     return step_id
 
@@ -81,7 +99,7 @@ async def search_web(query: str, num_results: int = 10) -> str:
 
 
 @mcp.tool(name="SavePlan")
-async def save_plan(plan_id: str, plan: dict | str) -> str:
+async def save_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
     """
     Save a plan to the shared state
 
@@ -100,45 +118,50 @@ async def save_plan(plan_id: str, plan: dict | str) -> str:
 
 
 @mcp.tool(name="MarkStepAsCompleted")
-async def mark_step_as_completed(plan_id: str, step_id: int) -> str:
+async def mark_step_as_completed(plan_id: str, step_id: int, agent_name: str) -> str:
     """
     Mark a step as completed in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark the step as completed.
         step_id (int): The ID of the step to mark as completed.
+        agent_name (str): The name of the agent that completed the step.
 
     Returns:
         str: A confirmation message indicating that the step has been marked as done.
     """
     step_id = check_step_id(step_id)
-    return update_plan_status(plan_id, step_id)
+    return update_plan_status(plan_id, step_id, agent_name, status="completed")
 
 
 @mcp.tool(name="MarkStepAsRunning")
-async def mark_step_as_running(plan_id: str, step_id: int) -> str:
+async def mark_step_as_running(plan_id: str, step_id: int, agent_name: str) -> str:
     """
     Mark a step as running in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark the step as running.
         step_id (int): The ID of the step to mark as running.
+        agent_name (str): The name of the agent that is running the step.
 
     Returns:
         str: A confirmation message indicating that the step has been marked as running.
     """
     step_id = check_step_id(step_id)
-    return update_plan_status(plan_id, step_id, status="running")
+    return update_plan_status(plan_id, step_id, agent_name, status="running")
 
 
 @mcp.tool(name="MarkStepAsFailed")
-async def mark_step_as_failed(plan_id: str, step_id: int, message: str) -> str:
+async def mark_step_as_failed(
+    plan_id: str, step_id: int, agent_name: str, message: str
+) -> str:
     """
     Mark a step as failed in the shared state
 
     Args:
         plan_id (str): The ID of the plan to mark the step as failed.
         step_id (int): The ID of the step to mark as failed.
+        agent_name (str): The name of the agent that attempted the step.
         message (str): An message describe the failure reason. It should include
             the tool or action that was being attempted, the error message, and any
             relevant context that might help in diagnosing the issue.
@@ -147,7 +170,9 @@ async def mark_step_as_failed(plan_id: str, step_id: int, message: str) -> str:
         str: A confirmation message indicating that the step has been marked as failed.
     """
     step_id = check_step_id(step_id)
-    return update_plan_status(plan_id, step_id, status="failed", message=message)
+    return update_plan_status(
+        plan_id, step_id, agent_name, status="failed", message=message
+    )
 
 
 @mcp.tool(name="SaveResult")
@@ -156,7 +181,7 @@ async def save_result(
     agent_name: AgentName,
     step_id: int,
     description: str,
-    result: str | dict,
+    result: str | dict[str, Any],
 ) -> str:
     """
     Save a result to the shared state
@@ -197,7 +222,7 @@ async def save_context_description(
 
 
 @mcp.tool(name="GetBlackboard")
-async def get_blackboard(plan_id: str) -> str | dict | None:
+async def get_blackboard(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a blackboard entry for a plan from the shared state
 
@@ -212,7 +237,7 @@ async def get_blackboard(plan_id: str) -> str | dict | None:
 
 
 @mcp.tool(name="GetPlan")
-async def get_plan(plan_id: str) -> str | dict | None:
+async def get_plan(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a plan from the shared state
 
@@ -228,7 +253,7 @@ async def get_plan(plan_id: str) -> str | dict | None:
 @mcp.tool(name="GetResult")
 async def get_result(
     plan_id: str, agent_name: AgentName, step_id: int
-) -> str | dict | None:
+) -> str | dict[str, Any] | None:
     """
     Fetch a result from the shared state
 
@@ -284,7 +309,10 @@ async def get_context(file_path_or_url: str, use_cache: bool = True) -> str:
 
 @mcp.tool(name="SaveEvaluation")
 async def save_evaluation(
-    plan_id: str, step_evaluated: int, check_number: int, evaluation_result: dict | str
+    plan_id: str,
+    step_evaluated: int,
+    check_number: int,
+    evaluation_result: dict[str, Any] | str,
 ) -> str:
     """
     Save evaluation data for a specific plan and step.
@@ -305,7 +333,7 @@ async def save_evaluation(
 @mcp.tool(name="GetEvaluation")
 async def get_evaluation(
     plan_id: str, step_evaluated: int, check_number: int
-) -> str | dict | None:
+) -> str | dict[str, Any] | None:
     """
     Fetch evaluation data for a specific plan and step.
 
@@ -319,3 +347,83 @@ async def get_evaluation(
             or None if not found.
     """
     return fetch_evaluation(plan_id, step_evaluated, check_number)
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(req: Request) -> Response:
+    """
+    Health check endpoint to verify the server is running.
+
+    Returns:
+        dict: A dictionary indicating the server is healthy.
+    """
+    return JSONResponse({"status": "healthy"})
+
+
+@mcp.custom_route("/save-file", methods=["PUT", "POST"])
+async def save_file(req: Request) -> JSONResponse:
+    """
+    Save context data to the blackboard.
+
+    Args:
+        context (ContextData): The context data to save.
+
+    Returns:
+        dict: A confirmation message.
+    """
+
+    logger = get_logger(__name__)
+    try:
+        data = ContextData.model_validate(await req.json())
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+    try:
+        file_url = save_context(data.data, data.file_path)
+        return JSONResponse({"file_url": file_url}, status_code=201)
+    except Exception as e:
+        logger.error(f"Error saving context data: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@mcp.custom_route("/send-update", methods=["POST"])
+async def send_update(req: Request) -> JSONResponse:
+    """
+    Send an action update to the blackboard.
+
+    Args:
+        action (ActionStream): The action stream containing the plan ID,
+            action, and data.
+
+    Returns:
+        dict: A confirmation message.
+    """
+
+    logger = get_logger(__name__)
+
+    try:
+        body = await req.json()
+        stream = ActionStream(
+            plan_id=body["plan_id"],
+            action=body["action"],
+            data=json.dumps(body["data"]),
+        )
+    except ValidationError as e:
+        logger.error(f"Validation error: {e}")
+        return JSONResponse(status_code=400, content={"error": str(e)})
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+    try:
+        add_to_stream(stream)
+        return JSONResponse(
+            content={"message": "Action update sent successfully."}, status_code=201
+        )
+    except Exception as e:
+        logger.error(f"Error sending action update: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})

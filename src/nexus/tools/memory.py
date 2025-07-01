@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from azure.identity import DefaultAzureCredential
 from redis import Redis
@@ -58,7 +59,7 @@ def add_to_stream(stream: ActionStream) -> str:
     logger = get_logger(__name__)
     stream_key = f"task-updates:{stream.plan_id}"
     try:
-        client.xadd(stream_key, stream.model_dump(mode="json"))
+        client.xadd(stream_key, stream.model_dump(mode="json"))  # type:ignore
         logger.info(
             f"Added to stream {stream_key}: {stream.action} for plan {stream.plan_id}"
         )
@@ -74,7 +75,7 @@ def add_to_stream(stream: ActionStream) -> str:
     retry=retry_if_exception_type(OSError),
     reraise=True,
 )
-def write_plan(plan_id: str, plan: dict | str) -> str:
+def write_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
     """
     Write a plan to the shared state
 
@@ -89,12 +90,13 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
         ValueError: If the plan is not in the correct format.
     """
     logger = get_logger(__name__)
-    if not isinstance(plan, dict | str):
-        logger.error("Plan must be a JSON-serializable object")
-        raise ValueError("Plan must be a JSON-serializable object")
 
     if isinstance(plan, str):
-        plan = json.loads(plan)
+        try:
+            plan = json.loads(plan)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode plan JSON: {e}")
+            raise ValueError("Plan must be a JSON-serializable object") from e
 
     client = get_redis_client()
     client.json().set(plan_id, "$", plan)
@@ -115,7 +117,11 @@ def write_plan(plan_id: str, plan: dict | str) -> str:
     reraise=True,
 )
 def update_plan_status(
-    plan_id: str, step_id: int, status: str = "completed", message: str | None = None
+    plan_id: str,
+    step_id: int,
+    agent_name: str,
+    status: str,
+    message: str | None = None,
 ) -> str:
     """
     Mark a plan step as done in the shared state
@@ -123,6 +129,7 @@ def update_plan_status(
     Args:
         plan_id (str): The ID of the plan to mark as done.
         step_id (int): The ID of the step to mark as done.
+        agent_name (str): The name of the agent performing the step.
         status (str): The status to set for the step. Defaults to "completed".
         message (str | None): An optional message to include with the status update.
 
@@ -135,7 +142,9 @@ def update_plan_status(
     client.json().set(plan_id, path, status)
     logger.info(f"Plan {plan_id} step {step_id} marked as {status} in shared state")
 
-    data = json.dumps({"step_id": step_id, "status": status})
+    data = json.dumps(
+        {"step_id": step_id, "agent": agent_name, "status": status, "message": message}
+    )
     stream = ActionStream(plan_id=plan_id, action=StateUpdates.update_status, data=data)
     add_to_stream(stream)
     return "ok"
@@ -166,7 +175,7 @@ def write_context_description(
 
     _b_key = f"blackboard|{plan_id}".lower()
     _v_key = f"context|{plan_id}|{file_path_or_url}"
-    client.hset(_b_key, _v_key, description)
+    client.hset(_b_key, _v_key, description)  # type: ignore
     client.expire(_b_key, 3600)
     logger.info(
         f"Context description for {file_path_or_url} written to"
@@ -188,7 +197,11 @@ def write_context_description(
     reraise=True,
 )
 def write_result(
-    plan_id: str, agent_name: str, step_id: int, description: str, result: dict | str
+    plan_id: str,
+    agent_name: str,
+    step_id: int,
+    description: str,
+    result: dict[str, Any] | str,
 ) -> str:
     """
     Save a result to the shared state
@@ -207,17 +220,18 @@ def write_result(
         ValueError: If the result is not in the correct format.
     """
     logger = get_logger(__name__)
-    if not isinstance(result, dict | str):
-        logger.error("Result must be a JSON-serializable object")
-        raise ValueError("Result must be a JSON-serializable object")
 
     if isinstance(result, dict):
-        result = json.dumps(result)
+        try:
+            result = json.dumps(result)
+        except TypeError as e:
+            logger.error(f"Failed to serialize result: {e}")
+            raise ValueError("Result must be a JSON-serializable object") from e
 
     client = get_redis_client()
     _b_key = f"blackboard|{plan_id}".lower()
     _v_key = f"result|{plan_id}|{step_id}|{agent_name}".lower()
-    client.hset(_b_key, _v_key, description)
+    client.hset(_b_key, _v_key, description)  # type:ignore
     client.expire(_b_key, 3600)
     client.set(_v_key, result)
     client.expire(_v_key, 3600)
@@ -246,7 +260,7 @@ def write_result(
     retry=retry_if_exception_type(OSError),
     reraise=True,
 )
-def fetch_plan(plan_id: str) -> str | dict | None:
+def fetch_plan(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a plan from the shared state
 
@@ -258,7 +272,7 @@ def fetch_plan(plan_id: str) -> str | dict | None:
     """
     logger = get_logger(__name__)
     client = get_redis_client()
-    data = client.json().get(plan_id)
+    data = client.json().get(plan_id)  # type:ignore
     logger.info(f"Plan data for {plan_id}")
     return json.dumps(data) if data else None
 
@@ -269,7 +283,7 @@ def fetch_plan(plan_id: str) -> str | dict | None:
     retry=retry_if_exception_type(OSError),
     reraise=True,
 )
-def fetch_blackboard(plan_id: str) -> str | dict | None:
+def fetch_blackboard(plan_id: str) -> str | dict[str, Any] | None:
     """
     Fetch a blackboard from the shared state
 
@@ -282,7 +296,7 @@ def fetch_blackboard(plan_id: str) -> str | dict | None:
     logger = get_logger(__name__)
     client = get_redis_client()
     _b_key = f"blackboard|{plan_id}".lower()
-    data = json.dumps(client.hgetall(_b_key))
+    data = json.dumps(client.hgetall(_b_key))  # type:ignore
     logger.info(f"Blackboard data for {plan_id}")
     return data if data else None
 
@@ -293,7 +307,9 @@ def fetch_blackboard(plan_id: str) -> str | dict | None:
     retry=retry_if_exception_type(OSError),
     reraise=True,
 )
-def fetch_result(plan_id: str, agent_name: str, step_id: int) -> str | dict | None:
+def fetch_result(
+    plan_id: str, agent_name: str, step_id: int
+) -> str | dict[str, Any] | None:
     """
     Fetch a result from the shared state
 
@@ -323,7 +339,10 @@ def fetch_result(plan_id: str, agent_name: str, step_id: int) -> str | dict | No
     reraise=True,
 )
 def write_evaluation(
-    plan_id: str, step_evaluated: int, check_number: int, evaluation_result: dict | str
+    plan_id: str,
+    step_evaluated: int,
+    check_number: int,
+    evaluation_result: dict[str, Any] | str,
 ) -> str:
     """
     Write an evaluation to the shared state
@@ -342,12 +361,15 @@ def write_evaluation(
         ValueError: If the plan is not in the correct format.
     """
     logger = get_logger(__name__)
-    if not isinstance(evaluation_result, dict | str):
-        logger.error("Plan must be a JSON-serializable object")
-        raise ValueError("Plan must be a JSON-serializable object")
 
     if isinstance(evaluation_result, str):
-        evaluation_result = json.loads(evaluation_result)
+        try:
+            evaluation_result = json.loads(evaluation_result)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode evaluation result JSON: {e}")
+            raise ValueError(
+                "Evaluation result must be a JSON-serializable object"
+            ) from e
 
     client = get_redis_client()
 
@@ -358,7 +380,7 @@ def write_evaluation(
         f"Evaluation number {check_number} for step {step_evaluated} "
         f"in plan {plan_id} by the evaluator agent"
     )
-    client.hset(_b_key, _v_key, description)
+    client.hset(_b_key, _v_key, description)  # type:ignore
     client.expire(_b_key, 3600)
 
     client.json().set(_v_key, "$", evaluation_result)
@@ -377,7 +399,7 @@ def write_evaluation(
 
 def fetch_evaluation(
     plan_id: str, step_evaluated: int, check_number: int
-) -> str | dict | None:
+) -> str | dict[str, Any] | None:
     """
     Fetch an evaluation from the shared state
 
@@ -393,7 +415,7 @@ def fetch_evaluation(
     logger = get_logger(__name__)
     client = get_redis_client()
     _v_key = f"evaluation|{plan_id}|{step_evaluated}|{check_number}".lower()
-    data = json.dumps(client.json().get(_v_key))
+    data = json.dumps(client.json().get(_v_key))  # type:ignore
     logger.info(
         f"Evaluation data for {plan_id}, step {step_evaluated}, check {check_number}"
     )
