@@ -35,6 +35,7 @@ def settings():
     """Create test Settings."""
     return Settings(
         cache_path="file:///tmp/test_cache",
+        data_path="file:///tmp/test_data",
         mcp_transport="stdio",
         redis=RedisSettings(
             host="localhost",

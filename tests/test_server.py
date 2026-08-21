@@ -10,7 +10,9 @@ from nexus.server import (
     get_plan,
     get_result,
     lifespan,
-    mark_plan_as_completed,
+    mark_step_as_completed,
+    mark_step_as_failed,
+    mark_step_as_running,
     mcp,
     save_context_description,
     save_plan,
@@ -114,17 +116,55 @@ async def test_save_plan(mock_write_plan):
 
 @patch("nexus.server.update_plan_status")
 @pytest.mark.asyncio
-async def test_mark_plan_as_completed(mock_update_status):
-    """Test marking a plan as completed."""
+async def test_mark_step_as_completed(mock_update_status):
+    """Test marking a step as completed."""
     # Setup
     mock_update_status.return_value = "ok"
 
     # Execute
-    result = await mark_plan_as_completed("test-plan-1", 1)
+    result = await mark_step_as_completed("test-plan-1", 1, "researcher")
 
     # Assert
     assert result == "ok"
-    mock_update_status.assert_called_once_with("test-plan-1", 1)
+    mock_update_status.assert_called_once_with(
+        "test-plan-1", 1, "researcher", status="completed"
+    )
+
+
+@patch("nexus.server.update_plan_status")
+@pytest.mark.asyncio
+async def test_mark_step_as_running(mock_update_status):
+    """Test marking a step as running."""
+    # Setup
+    mock_update_status.return_value = "ok"
+
+    # Execute
+    result = await mark_step_as_running("test-plan-1", 1, "researcher")
+
+    # Assert
+    assert result == "ok"
+    mock_update_status.assert_called_once_with(
+        "test-plan-1", 1, "researcher", status="running"
+    )
+
+
+@patch("nexus.server.update_plan_status")
+@pytest.mark.asyncio
+async def test_mark_step_as_failed(mock_update_status):
+    """Test marking a step as failed."""
+    # Setup
+    mock_update_status.return_value = "ok"
+
+    # Execute
+    result = await mark_step_as_failed(
+        "test-plan-1", 1, "researcher", "boom"
+    )
+
+    # Assert
+    assert result == "ok"
+    mock_update_status.assert_called_once_with(
+        "test-plan-1", 1, "researcher", status="failed", message="boom"
+    )
 
 
 @patch("nexus.server.write_context_description")

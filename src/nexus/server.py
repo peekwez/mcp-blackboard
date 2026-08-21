@@ -78,7 +78,7 @@ def check_step_id(step_id: int) -> int:
     Raises:
         ValueError: If the step ID is not a positive integer.
     """
-    if step_id <= 0:
+    if not isinstance(step_id, int) or isinstance(step_id, bool) or step_id <= 0:
         raise ValueError("step_id must be a positive integer.")
     return step_id
 

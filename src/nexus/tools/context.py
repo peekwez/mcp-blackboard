@@ -117,8 +117,9 @@ def _load_cache_file(url: str, settings: Settings) -> str:
         raise OSError(f"Cache file {cache_file} does not exist")
 
     with fs.open(cache_file, "r") as f:
-        return f.read()
+        contents = f.read()
     logger.info(f"Cache file loaded: {cache_file} for URL: {url}")
+    return contents
 
 
 @retry(

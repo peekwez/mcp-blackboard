@@ -98,7 +98,7 @@ def test_update_plan_status(
     mock_redis.json = MagicMock()
 
     # Execute
-    result = update_plan_status("test-plan-1", 1)
+    result = update_plan_status("test-plan-1", 1, "researcher", "completed")
 
     # Assert
     mock_redis.json().set.assert_called_once_with(
@@ -168,7 +168,7 @@ def test_fetch_plan(mock_get_redis, mock_get_settings, settings, mock_redis):
 
     # Assert
     mock_redis.json().get.assert_called_once_with("test-plan-1")
-    assert result == {"id": "test-plan-1", "steps": []}
+    assert result == json.dumps({"id": "test-plan-1", "steps": []})
 
 
 @patch("nexus.tools.memory.get_settings")
@@ -203,7 +203,7 @@ def test_fetch_result(mock_get_redis, mock_get_settings, settings, mock_redis):
 
     # Assert
     mock_redis.get.assert_called_once_with("result|test-plan-1|1|researcher")
-    assert result == '"Test result"'
+    assert result == "Test result"
 
 
 @patch("nexus.tools.memory.get_settings")
@@ -222,7 +222,7 @@ def test_fetch_result_not_found(
 
     # Assert
     mock_redis.get.assert_called_once_with("result|test-plan-1|1|researcher")
-    assert result == "null"
+    assert result is None
 
 
 @patch("nexus.tools.memory.get_settings")

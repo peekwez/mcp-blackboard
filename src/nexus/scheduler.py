@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from nexus.common import get_settings
+from nexus.logging import get_logger
 from nexus.tools.context import get_file_age, get_filesystem
 
 
@@ -31,7 +32,7 @@ def remove_stale_files(max_age: int = 3600) -> None:
             if file_age > max_age:
                 fs.rm(f"{file_info['name']}")
     except Exception as e:
-        print(f"Error removing stale files: {e}")
+        get_logger(__name__).error(f"Error removing stale files: {e}")
 
 
 def get_scheduler() -> BackgroundScheduler:
