@@ -95,6 +95,7 @@ def test_settings_validation():
     # Valid configuration
     config = Settings(
         cache_path="file:///tmp/cache",
+        data_path="file:///tmp/data",
         mcp_transport="stdio",
         redis=RedisSettings(host="localhost", port=6379, db=0),
         storage=StorageSettings(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
@@ -110,6 +111,7 @@ def test_settings_validation():
         ),
     )
     assert config.cache_path == "file:///tmp/cache"
+    assert config.data_path == "file:///tmp/data"
     assert config.mcp_transport == "stdio"
     assert isinstance(config.redis, RedisSettings)
     assert isinstance(config.storage, StorageSettings)
@@ -119,6 +121,7 @@ def test_settings_validation():
     # Valid configuration with SSE transport
     config = Settings(
         cache_path="file:///tmp/cache",
+        data_path="file:///tmp/data",
         mcp_transport="sse",
         redis=RedisSettings(host="localhost", port=6379, db=0),
         storage=StorageSettings(abfs={}, s3={}, gcs={}, sftp={}, smb={}),
@@ -159,7 +162,7 @@ def test_state_updates_enum():
 
     # Test string conversion
     assert str(StateUpdates.write_plan) == "save-plan"
-    assert str(StateUpdates.update_status) == "mark-plan-as-completed"
+    assert str(StateUpdates.update_status) == "update-status"
     assert str(StateUpdates.describe_context) == "save-context-description"
     assert str(StateUpdates.write_result) == "save-result"
 
@@ -170,7 +173,7 @@ def test_state_updates_enum():
     with pytest.raises(ValueError):
         StateUpdates("SAVE-PLAN")
 
-    assert StateUpdates("mark-plan-as-completed") == StateUpdates.update_status
+    assert StateUpdates("update-status") == StateUpdates.update_status
 
     # Test invalid value
     with pytest.raises(ValueError):

@@ -97,6 +97,8 @@ def write_plan(plan_id: str, plan: dict[str, Any] | str) -> str:
         except json.JSONDecodeError as e:
             logger.error(f"Failed to decode plan JSON: {e}")
             raise ValueError("Plan must be a JSON-serializable object") from e
+    elif not isinstance(plan, dict):
+        raise ValueError("Plan must be a JSON-serializable object")
 
     client = get_redis_client()
     client.json().set(plan_id, "$", plan)
@@ -227,6 +229,8 @@ def write_result(
         except TypeError as e:
             logger.error(f"Failed to serialize result: {e}")
             raise ValueError("Result must be a JSON-serializable object") from e
+    elif not isinstance(result, str):
+        raise ValueError("Result must be a JSON-serializable object")
 
     client = get_redis_client()
     _b_key = f"blackboard|{plan_id}".lower()
@@ -325,7 +329,7 @@ def fetch_result(
     logger = get_logger(__name__)
     client = get_redis_client()
     _v_key = f"result|{plan_id}|{step_id}|{agent_name}".lower()
-    data = json.dumps(client.get(_v_key))
+    data = client.get(_v_key)
     logger.info(
         f"Result data for  plan {plan_id}, {agent_name} agent,  and step {step_id}"
     )
